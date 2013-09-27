@@ -109,7 +109,7 @@ npm install -g supervisor
 and then run your proxy using supervisor:
 
 ```sh
-cs hyperProxy/example
+cd hyperProxy/example
 supervisor example.js
 ```
 
