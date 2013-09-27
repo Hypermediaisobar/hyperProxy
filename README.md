@@ -1,7 +1,7 @@
 hyperProxy
 ==========
 
-A node.js local proxy to help front-end developers use local files for production sites.
+A node.js (http://nodejs.org/) local proxy to help front-end developers use local files for production sites.
 hyperProxy is still in development, so beware :).
 
 
@@ -13,6 +13,7 @@ Before you start using hyperProxy, be sue to run:
 `npm install colors`
 
 command in the directory in which you will run your proxy.
+
 
 ## Configuration
 
@@ -85,11 +86,13 @@ That will allow you to save changes to your proxy configuration and use it witho
 
 hyperProxy exports two helper functions: overrideJSandCSSgeneric and overrideWithStaticOutput.
 
+
 ### hyperProxy.overrideJSandCSSgeneric(response, found, data, post)
 
 In projects that use separate CSS and JS files there's not much additional work needed.
 This function tries to find JS, CSS, HTM(L) or SWF file, and if one does not exists, it tries the same file name but without ".min"
 part (only for JS and CSS and if there is any) - just in case there is a full source data available.
+
 
 ### hyperProxy.overrideWithStaticOutput(response, found, data, post)
 
@@ -113,9 +116,10 @@ This function simply overrides requested file with the one specified in the `dat
    to make creation of overrides even simpler for people who do not like regular expressions.
 4. Resign from dependancy on external proxy library. This will most probably be implemented along with the 2nd point above.
 
+
 ## Thanks
 
 1. Arkadiusz Ryćkowski, for telling me about the idea to override target files with local files.
-2. node-http-proxy: https://github.com/nodejitsu/node-http-proxy
-3. node-mitm-proxy: https://github.com/horaci/node-mitm-proxy
-4. node-http-mitm-proxy: https://github.com/nearinfinity/node-http-mitm-proxy
+2. node-http-proxy: https://github.com/nodejitsu/node-http-proxy for great module
+3. node-mitm-proxy: https://github.com/horaci/node-mitm-proxy for great module on which hyperProxy is currently based
+4. node-http-mitm-proxy: https://github.com/nearinfinity/node-http-mitm-proxy for example of multi-certificate implementation
