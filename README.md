@@ -8,7 +8,7 @@ hyperProxy is still in development, so beware :).
 ## Installation
 
 hyperProxy (or more exactly it's PACServer sub-module and node-mitm-proxy on which hyperProxu currently depends) requires `colors` module.
-Before you start using hyperProxy, be sue to run:
+Before you start using hyperProxy, be sure to run:
 
 `npm install colors`
 
