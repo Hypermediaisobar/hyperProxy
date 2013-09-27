@@ -37,7 +37,7 @@ hyperProxy should be pretty easy to configure. You will need two configuration o
 
 Settings may look like this:
 
-```
+```javascript
 var settings = {
 	// This port can actually be used for both HTTP and HTTPS.
 	'http_port': 8000,
