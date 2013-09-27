@@ -115,6 +115,7 @@ This function simply overrides requested file with the one specified in the `dat
 3. Create something similar to http://thechangelog.com/frak-takes-an-entirely-different-approach-to-generating-regular-expressions/
    to make creation of overrides even simpler for people who do not like regular expressions.
 4. Resign from dependancy on external proxy library. This will most probably be implemented along with the 2nd point above.
+5. There may be a problem using hyperProxy and VPN connection together. We have yet to test and debug it more.
 
 
 ## Thanks
