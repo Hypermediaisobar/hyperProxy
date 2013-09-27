@@ -2,7 +2,9 @@ hyperProxy
 ==========
 
 A node.js (http://nodejs.org/) local proxy to help front-end developers use local files for debugging or developping production sites.
-*WARNING*: hyperProxy is still in development, so beware :).
+
+**WARNING**: hyperProxy is still in development, so beware :).
+
 
 ## What it is and why you may want to try it
 
