@@ -58,6 +58,29 @@ new hyperProxy.start(overrides, settings);
 
 For more explanations look into the example.js code and hyperProxy.js code.
 
+After setting up a file, just run it using node.js in the directory of the file:
+
+```
+cd hyperProxy/example
+node example.js
+```
+
+If you want to workout best configuration, and want to change overrides often, it's good to install supervisor (https://github.com/isaacs/node-supervisor) module:
+
+```
+npm install -g supervisor
+```
+
+and then run your proxy using supervisor:
+
+```
+cs hyperProxy/example
+supervisor example.js
+```
+
+That will allow you to save changes to your proxy configuration and use it without a need to restart it manually all the time.
+
+
 ## Helper functions
 
 hyperProxy exports two helper functions: overrideJSandCSSgeneric and overrideWithStaticOutput.
