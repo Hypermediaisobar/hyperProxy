@@ -25,7 +25,7 @@ Using PAC allows browser to proxy requests only for those URLs that we wanted to
 
 ## Installation
 
-hyperProxy (or more exactly it's PACServer sub-module and node-mitm-proxy on which hyperProxu currently depends) requires `colors` module.
+hyperProxy (or more exactly it's PACServer sub-module and node-mitm-proxy on which hyperProxy currently depends) requires `colors` module.
 Before you start using hyperProxy, be sure to run:
 
 ```sh
