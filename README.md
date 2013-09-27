@@ -26,7 +26,9 @@ Using PAC allows browser to proxy requests only for those URLs that we wanted to
 hyperProxy (or more exactly it's PACServer sub-module and node-mitm-proxy on which hyperProxu currently depends) requires `colors` module.
 Before you start using hyperProxy, be sure to run:
 
-`npm install colors`
+```sh
+npm install colors
+```
 
 command in the directory in which you will run your proxy.
 
@@ -64,7 +66,7 @@ var settings = {
 
 Overrides may look like this:
 
-```
+```javascript
 var overrides = {
 	// This will override all request for minimized jQuery 1.10.2 (on ANY site)
 	// so non-minimized version from local disk will be returned.
@@ -84,7 +86,7 @@ var overrides = {
 
 After that, you just need to start hyperProxy:
 
-```
+```javascript
 var hyperProxy = require('./hyperProxy/hyperProxy.js');
 new hyperProxy.start(overrides, settings);
 ```
@@ -93,20 +95,20 @@ For more explanations look into the example.js code and hyperProxy.js code.
 
 After setting up a file, just run it using node.js in the directory of the file:
 
-```
+```sh
 cd hyperProxy/example
 node example.js
 ```
 
 If you want to workout best configuration, and want to change overrides often, it's good to install supervisor (https://github.com/isaacs/node-supervisor) module:
 
-```
+```sh
 npm install -g supervisor
 ```
 
 and then run your proxy using supervisor:
 
-```
+```sh
 cs hyperProxy/example
 supervisor example.js
 ```
