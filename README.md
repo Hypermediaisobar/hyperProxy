@@ -88,6 +88,7 @@ This function simply overrides requested file with the one specified in the `dat
    to the system/browser to prevent warnings about "unofficial" certificates.
 3. Create something similar to http://thechangelog.com/frak-takes-an-entirely-different-approach-to-generating-regular-expressions/
    to make creation of overrides even simpler for people who do not like regular expressions.
+4. Resign from dependancy on external proxy library. This will most probably be implemented along with the 2nd point above.
 
 ## Thanks
 
