@@ -25,14 +25,17 @@ Using PAC allows browser to proxy requests only for those URLs that we wanted to
 
 ## Installation
 
+If you do not have nodejs installed yet, go to the http://nodejs.org/, download and install it.
+
 hyperProxy (or more exactly it's PACServer sub-module and node-mitm-proxy on which hyperProxy currently depends) requires `colors` module.
-Before you start using hyperProxy, be sure to run:
+Before you start using hyperProxy, be sure to install that module for your hyperProxy, for example using following command lines:
 
 ```sh
+cd hyperProxy/example
 npm install colors
 ```
 
-command in the directory in which you will run your proxy.
+If you're on Windows, you got commandline terminal installed with node.js. Run it to open console window, and enter commands mentioned above there.
 
 
 ## Configuration
@@ -95,27 +98,27 @@ new hyperProxy.start(overrides, settings);
 
 For more explanations look into the example.js code and hyperProxy.js code.
 
-After setting up a file, just run it using node.js in the directory of the file:
+After setting up a file, just run it using node.js in the directory of your hyperProxy file, for example:
 
 ```sh
 cd hyperProxy/example
 node example.js
 ```
 
-If you want to workout best configuration, and want to change overrides often, it's good to install supervisor (https://github.com/isaacs/node-supervisor) module:
+If you want to work on the best configuration, and want to change overrides often, it's good to install supervisor (https://github.com/isaacs/node-supervisor) module:
 
 ```sh
 npm install -g supervisor
 ```
 
-and then run your proxy using supervisor:
+and then use it to run your proxy:
 
 ```sh
 cd hyperProxy/example
 supervisor example.js
 ```
 
-That will allow you to save changes to your proxy configuration and use it without a need to restart it manually all the time.
+That will allow you to save changes to your proxy configuration and use them without a need to restart the proxy manually every time.
 
 
 ## Helper functions
