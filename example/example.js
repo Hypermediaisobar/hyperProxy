@@ -65,14 +65,14 @@ var settings = {
 	'defaultproxy': false
 	/*
 	// Or:
-	defaultproxy = {
+	defaultproxy: {
 		'proxy': 'company.proxy',
 		'port': 8888
 	}
 	*/
 	/*
 	// Or:
-	defaultproxy = {
+	defaultproxy: {
 		'proxy': '127.0.0.1',
 		'port': 8080
 	}
