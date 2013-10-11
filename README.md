@@ -41,6 +41,7 @@ If you're on Windows, you got commandline terminal installed with node.js. Run i
 ## Configuration
 
 hyperProxy should be pretty easy to configure. You will need two configuration objects: settings and overrides.
+Let's start by following the example.js found in example subdirectory.
 
 Settings may look like this:
 
@@ -55,8 +56,8 @@ var settings = {
 	// Verbosity can be false, true or "debug" for all the stuff possible to be printed in the console.
 	'verbose': false,
 	// Standard key and certificate for handling HTTPS
-	'ssl_key': './example/certs/server.key',
-	'ssl_cert': './example/certs/server.crt',
+	'ssl_key': './certs/server.key',
+	'ssl_cert': './certs/server.crt',
 	// Not needed, unless you need to use corporate proxy with NTLM login,
 	// in which case you can install http://cntlm.sourceforge.net/
 	// and configure it here. Look into hyperProxy.js for more information.
@@ -89,10 +90,10 @@ var overrides = {
 };
 ```
 
-After that, you just need to start hyperProxy:
+After that, you just need to start hyperProxy (this assumes that your proxy file is next to the hyperProxy subdirectory, where hyperProxy files are located):
 
 ```javascript
-var hyperProxy = require('./hyperProxy/hyperProxy.js');
+var hyperProxy = require('../hyperProxy.js');
 new hyperProxy.start(overrides, settings);
 ```
 
@@ -101,7 +102,6 @@ For more explanations look into the example.js code and hyperProxy.js code.
 After setting up a file, just run it using node.js in the directory of your hyperProxy file, for example:
 
 ```sh
-cd hyperProxy/example
 node example.js
 ```
 
@@ -114,7 +114,6 @@ npm install -g supervisor
 and then use it to run your proxy:
 
 ```sh
-cd hyperProxy/example
 supervisor example.js
 ```
 
