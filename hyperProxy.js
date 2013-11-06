@@ -92,11 +92,11 @@ var query = require('querystring');
 		// Set defaultproxy to false to not use any default proxy in the PAC file output
 		// (PAC will return DIRECT connection value in that case).
 		defaultproxy: false
-		//defaultproxy: {
+		//defaultproxy = {
 		//	'proxy': 'hyper.proxy',
 		//	'port': 3128
 		//}
-		//defaultproxy: {
+		//defaultproxy = {
 		//	'proxy': '127.0.0.1',
 		//	'port': 8080
 		//}
