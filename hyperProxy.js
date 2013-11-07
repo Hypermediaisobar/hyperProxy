@@ -127,6 +127,7 @@ module.exports.start = function(overrides, settings) {
 		});
 
 		var CNTLM = require('./lib/CNTLM.js');
+		self.settings.cntlm.verbose = self.settings.cntlm.verbose || self.settings.verbose;
 		self.cntlm = new CNTLM(self.settings.cntlm);
 	}
 
