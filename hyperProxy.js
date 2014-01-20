@@ -6,6 +6,8 @@ var query = require('querystring');
 
 	var OVERRIDES = {
 		'override1': {
+			// Optional host, in case of handling domain name added to the Windows hosts file.
+			'host': '127.0.0.1',
 			// Match any JS and CSS file.
 			'match': new RegExp(/\/(.*\.(js|css)$/i),
 			// Optional: When matched, call the following function.
@@ -154,6 +156,11 @@ module.exports.start = function(overrides, settings) {
 				if (found && found.length > 0) {
 					if (self.overrides[name].hasOwnProperty('omitCNTLM') && self.overrides[name].omitCNTLM) {
 						omitCNTLM = true;
+					}
+					if (self.overrides[name].hasOwnProperty('host') && self.overrides[name].host) {
+						req_url.hostname = self.overrides[name].host;
+						delete req_url.host;
+						target = URL.format(req_url);
 					}
 					if (self.overrides[name].hasOwnProperty('callback')) {
 						try {
