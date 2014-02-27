@@ -65,8 +65,9 @@ var query = require('querystring');
 	var HYPERPROXY = {
 		'http_port': 8000,
 		'https_port': 8001,
-		// Set pac_port to false if PAC file server should not be created.
-		'pac_port': 8002,
+		// Set pac_port to false if PAC file server should not be started.
+		// Without separate PAC file server, hyperProxy will serve `http://localhost:[http_port]/proxy.pac` file instead.
+		'pac_port': false,//8002
 		'verbose': true,//'debug',
 		'ssl_key': './certs/ssl-key.pem',
 		'ssl_cert': './certs/ssl-cert.pem',
@@ -104,10 +105,17 @@ var query = require('querystring');
 		//}
 	};
 
-	var hyperProxy = require('./lib/hyperProxy.js')(OVERRIDES, HYPERPROXY);
+	var hyperProxy = require('./lib/hyperProxy.js');
+	new hyperProxy.start(OVERRIDES, HYPERPROXY);
 */
 
-module.exports.start = function(overrides, settings) {
+module.exports.start = function HyperProxy(overrides, settings) {
+	'use strict';
+
+	if (!(this instanceof HyperProxy)) {
+		return new HyperProxy(overrides, settings);
+	}
+
 	var self = this;
 
 	self.settings = settings;
@@ -141,47 +149,54 @@ module.exports.start = function(overrides, settings) {
 		var found = null;
 		var omitCNTLM = false;
 
+		var override = null;
 		for (var name in self.overrides) {
-			if (self.overrides.hasOwnProperty(name)) {
-				found = null;
-				if (self.overrides[name].hasOwnProperty('match')) {
-					if (self.overrides[name]['match'] instanceof RegExp) {
-						found = self.overrides[name]['match'].exec(target);
-					}
-					else if (self.overrides[name]['match'] === target) {
-						found = [target];
-					}
-				}
+			if (!self.overrides.hasOwnProperty(name)) {
+				continue;
+			}
 
-				if (found && found.length > 0) {
-					if (self.overrides[name].hasOwnProperty('omitCNTLM') && self.overrides[name].omitCNTLM) {
-						omitCNTLM = true;
-					}
-					if (self.overrides[name].hasOwnProperty('host') && self.overrides[name].host) {
-						req_url.hostname = self.overrides[name].host;
-						delete req_url.host;
-						target = URL.format(req_url);
-					}
-					if (self.overrides[name].hasOwnProperty('callback')) {
-						try {
-							console.log("[" + req_url.hostname + req_url.pathname + "] - Overriding using " + name);
-							var data = '';
-							req.on('data', function(chunk){
-								data += chunk;
-							});
-							req.on('end', function(){
-								data = (data ? query.parse(data) : false);
-								(self.overrides[name]['callback'])(res, found, self.overrides[name], data);
-							});
-							return true;
-						}
-						catch (e) {
-							console.log(e);
-						}
-					}
-					break;
+			found = null;
+			override = self.overrides[name];
+
+			if (override.hasOwnProperty('match')) {
+				if (override.match instanceof RegExp) {
+					found = override.match.exec(target);
+				}
+				else if (override.match === target) {
+					found = [target];
 				}
 			}
+
+			if (!found || !found.length) {
+				continue;
+			}
+
+			if (override.hasOwnProperty('omitCNTLM') && override.omitCNTLM) {
+				omitCNTLM = true;
+			}
+			if (override.hasOwnProperty('host') && override.host) {
+				req_url.hostname = override.host;
+				delete req_url.host;
+				target = URL.format(req_url);
+			}
+			if (override.hasOwnProperty('callback')) {
+				try {
+					console.log("[" + req_url.hostname + req_url.pathname + "] - Overriding using " + name);
+					var data = '';
+					req.on('data', function(chunk){
+						data += chunk;
+					});
+					req.on('end', function(){
+						data = (data ? query.parse(data) : false);
+						override.callback(res, found, override, data);
+					});
+					return true;
+				}
+				catch (e) {
+					console.log(e);
+				}
+			}
+			break;
 		}
 
 		// No override was found and called, so let's pass it over to the proxy.
@@ -197,23 +212,29 @@ module.exports.start = function(overrides, settings) {
 		return false;
 	};
 
+	self.pac = require('./lib/PAC.js');
+
 	self.hyperProxyProcessor = function(proxy) {
 		this.override_request = function(request, req_url, response, type){
 			var url = req_url;
 			console.log("[" + url.hostname + url.pathname + "] - Processor override_request, url: " + URL.format(url));
+
+			if (!self.settings.pac_port && url.pathname === '/proxy.pac') {
+				console.log('Served proxy.pac file.');
+				self.pac.handleRequest(request, response, self.pac.script(self.overrides, self.settings, self.settings.defaultproxy));
+				return true;
+			}
+
 			return self.overrider(request, response, req_url, type);
 		};
 	};
 
-	Proxy = require('./lib/node-mitm-proxy/proxy.js');
-	self.proxy = new Proxy({id: 'hyperProxy', proxy_port: self.settings.http_port, mitm_port: self.settings.https_port, verbose: self.settings.verbose, key_path: self.settings.ssl_key, cert_path: self.settings.ssl_cert}, self.hyperProxyProcessor);
-
+	self.proxy = new (require('./lib/node-mitm-proxy/proxy.js'))({id: 'hyperProxy', proxy_port: self.settings.http_port, mitm_port: self.settings.https_port, verbose: self.settings.verbose, key_path: self.settings.ssl_key, cert_path: self.settings.ssl_cert}, self.hyperProxyProcessor);
 
 	if (self.settings.pac_port) {
-		self.pacServer = new require('./lib/PACServer.js')(self.overrides, self.settings.pac_port, self.settings, self.settings.defaultproxy);
+		self.pacServer = self.pac.server(self.settings.pac_port, self.overrides, self.settings, self.settings.defaultproxy);
 	}
 };
-
 
 // Dependencies.
 var fs = require('fs');
@@ -230,7 +251,7 @@ var path = require('path');
 	@post - parsed query from the POST data, e.g., "variable=value" will be passed as "{ variable: value }". Not used.
 */
 module.exports.overrideJSandCSSgeneric = function (res, found, data, post){
-	var filename = path.join(data['path'], found[1]);
+	var filename = path.join(data.path, found[1]);
 	var stats;
 
 	if (!fs.existsSync(filename) && filename.match(/\.(js|css)$/i)) {
@@ -288,7 +309,7 @@ module.exports.overrideJSandCSSgeneric = function (res, found, data, post){
 	@post - parsed query from the POST data, e.g., "variable=value" will be passed as "{ variable: value }". Not used.
 */
 module.exports.overrideWithStaticOutput = function(res, found, data, post){
-	var filename = data['path'];
+	var filename = data.path;
 	var stats;
 
 	try {

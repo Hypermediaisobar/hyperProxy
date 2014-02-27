@@ -8,18 +8,21 @@ var hyperProxy = require('../hyperProxy.js');
 ---------------------------------------------------------------------------------------------------*/
 
 var overrides = {
-	// This will override all request for minimized jQuery 1.10.2 (on ANY site)
+	// This will override all request for minimized jQuery (on ANY site, ANY version)
 	// so non-minimized version from local disk will be returned.
-	'jquery-1.10.2': {
-		'match': new RegExp(/\/(jquery-1.10.2\.min\.(js))$/i),
+	// Try to get http://code.jquery.com/jquery-1.11.0.min.js through the proxy now ;).
+	'jquery-min': {
+		'match': new RegExp(/\/(jquery-[\d\.]+\.min\.(js))$/i),
 		'callback': hyperProxy.overrideJSandCSSgeneric,
 		'path': './js/',
 		'omitCNTLM': true
 	},
+	// Same as above, but for non-versioned file name and
+	// using static output just to show hot it can be used :).
 	'jquery': {
 		'match': new RegExp(/\/jquery\.min\.js$/i),
 		'callback': hyperProxy.overrideWithStaticOutput,
-		'path': './js/jquery-1.10.2.js',
+		'path': './js/jquery-1.11.0.js',
 		'omitCNTLM': true
 	}
 };
@@ -30,8 +33,9 @@ var overrides = {
 var settings = {
 	'http_port': 8000,
 	'https_port': 8001,
-	// Set pac_port to false if PAC file server should not be created.
-	'pac_port': 8002,
+	// Set pac_port to false if PAC file server should not be started.
+	// Without separate PAC file server, hyperProxy will serve `http://localhost:[http_port]/proxy.pac` file instead.
+	'pac_port': false,//8002
 	'verbose': false,//'debug',
 	'ssl_key': './certs/server.key',
 	'ssl_cert': './certs/server.crt',
@@ -102,7 +106,9 @@ var path = require('path');
 	@post - parsed query from the POST data, e.g., "variable=value" will be passed as "{ variable: value }".
 */
 function overrideJSandCSSonCQ(res, found, data, post){
-	var dir = path.join(data['path'], found[1]);
+	'use strict';
+
+	var dir = path.join(data.path, found[1]);
 	var ls = fs.readFileSync(path.join(dir, found[3] + '.txt'), 'utf8');
 	var lines = ls.match(/[^\r\n]+/g);
 	var output = '';
@@ -125,4 +131,4 @@ function overrideJSandCSSonCQ(res, found, data, post){
 	START OUR PROXY
 ---------------------------------------------------------------------------------------------------*/
 
-new hyperProxy.start(overrides, settings);
+hyperProxy.start(overrides, settings);
