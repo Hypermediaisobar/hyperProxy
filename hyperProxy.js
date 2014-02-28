@@ -1,5 +1,10 @@
-var URL = require('url');
 var query = require('querystring');
+var URL = require('url');
+
+
+var net = require('net');
+var dns = require('dns');
+var os = require('os');
 
 /*
 	Example:
@@ -214,12 +219,53 @@ module.exports.start = function HyperProxy(overrides, settings) {
 
 	self.pac = require('./lib/PAC.js');
 
+	self.IPs = (function(){
+		var networkInterfaces = os.networkInterfaces();
+
+		var result = {};
+		for (var n in networkInterfaces) {
+			if (!networkInterfaces.hasOwnProperty(n)) {
+				continue;
+			}
+
+			for (var i = 0; i < networkInterfaces[n].length; i++) {
+				result[networkInterfaces[n][i].address] = {family: networkInterfaces[n][i].family, internal: networkInterfaces[n][i].internal};
+			}
+		}
+
+		return result;
+	})();
+
+	self.isItMyHostname = function(hostname) {
+		var family = net.isIP(hostname);
+
+		if (!family) {
+			hostname = hostname.split(/:[^:]+$/)[0];
+
+			if (hostname === 'localhost') {
+				hostname = '127.0.0.1';
+			}
+		
+			family = net.isIP(hostname);
+
+			if (!family) {
+				// TODO: dns lookup?
+			}
+		}
+
+		if (!self.IPs.hasOwnProperty(hostname)) {
+			return false;
+		}
+
+		return self.IPs[hostname];
+	};
+
 	self.hyperProxyProcessor = function(proxy) {
 		this.override_request = function(request, req_url, response, type){
 			var url = req_url;
 			console.log("[" + url.hostname + url.pathname + "] - Processor override_request, url: " + URL.format(url));
 
-			if (!self.settings.pac_port && url.pathname === '/proxy.pac') {
+			if (!self.settings.pac_port && url.pathname === '/proxy.pac' && self.isItMyHostname(url.hostname)) {
 				console.log('Served proxy.pac file.');
 				self.pac.handleRequest(request, response, self.pac.script(self.overrides, self.settings, self.settings.defaultproxy));
 				return true;
@@ -230,6 +276,9 @@ module.exports.start = function HyperProxy(overrides, settings) {
 	};
 
 	self.proxy = new (require('./lib/node-mitm-proxy/proxy.js'))({id: 'hyperProxy', proxy_port: self.settings.http_port, mitm_port: self.settings.https_port, verbose: self.settings.verbose, key_path: self.settings.ssl_key, cert_path: self.settings.ssl_cert}, self.hyperProxyProcessor);
+	self.proxy.server.on('listening', function(a){
+		// Proxy is ready.
+	});
 
 	if (self.settings.pac_port) {
 		self.pacServer = self.pac.server(self.settings.pac_port, self.overrides, self.settings, self.settings.defaultproxy);
