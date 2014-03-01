@@ -137,6 +137,17 @@ part (only for JS and CSS and if there is any) - just in case there is a full so
 This function simply overrides requested file with the one specified in the `data['path']` parameter (data is an object from the overrides object).
 
 
+## Testing
+
+Some small parts of the module can be run through automated testing with mocha (http://visionmedia.github.io/mocha/).
+To run all available tests, use following command lines:
+
+```sh
+cd hyperProxy
+mocha
+```
+
+
 ## Known problems
 
 1. When using CNTLM and node.js 0.10+ requests start to freeze quickly. It worked OK with node.js 0.8+.
