@@ -282,6 +282,10 @@ module.exports.start = function HyperProxy(overrides, settings) {
 
 	if (self.settings.pac_port) {
 		self.pacServer = self.pac.server(self.settings.pac_port, self.overrides, self.settings, self.settings.defaultproxy);
+		self.pacServer.server.on('listening', function(){
+			console.log("\nServing PAC file for your web browser(s) on port "+self.settings.pac_port);
+			console.log("\nTo test without possible additional problems with HTTPS certificates, you can start Chrome browser like this:\n\n---\n\t" + 'chrome --proxy-pac-url="http://127.0.0.1:'+self.settings.pac_port+'" --ignore-certificate-errors --user-data-dir=/tmp/random/unique' + "\n---\n\n");
+		});
 	}
 };
 

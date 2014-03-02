@@ -35,7 +35,7 @@ var settings = {
 	'https_port': 8001,
 	// Set pac_port to false if PAC file server should not be started.
 	// Without separate PAC file server, hyperProxy will serve `http://localhost:[http_port]/proxy.pac` file instead.
-	'pac_port': false,//8002
+	'pac_port': false,//8002,
 	'verbose': false,//'debug',
 	'ssl_key': './certs/server.key',
 	'ssl_cert': './certs/server.crt',
