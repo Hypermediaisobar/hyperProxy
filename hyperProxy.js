@@ -237,27 +237,29 @@ module.exports.start = function HyperProxy(overrides, settings) {
 	})();
 
 	self.isItMyHostname = function(hostname) {
-		var family = net.isIP(hostname);
+		var temp = hostname.split(/:/);
+		var port = temp.pop();
 
-		if (!family) {
-			hostname = hostname.split(/:[^:]+$/)[0];
-
-			if (hostname === 'localhost') {
-				hostname = '127.0.0.1';
-			}
-		
-			family = net.isIP(hostname);
-
-			if (!family) {
-				// TODO: dns lookup?
-			}
-		}
-
-		if (!self.IPs.hasOwnProperty(hostname)) {
+		if (port != self.settings.http_port) {
 			return false;
 		}
 
-		return self.IPs[hostname];
+		var host = temp.join(':');
+
+		if (host === 'localhost') {
+			host = '127.0.0.1';
+		}
+
+		var family = net.isIP(host);
+
+		if (!family) {
+			// TODO: dns lookup?
+		}
+		if (!self.IPs.hasOwnProperty(host)) {
+			return false;
+		}
+
+		return self.IPs[host];
 	};
 
 	self.hyperProxyProcessor = function(proxy) {
