@@ -27,7 +27,7 @@ describe('PAC', function(){
 	});
 
 	it('should exist', function(){
-		assert.ok('pac');
+		assert.ok(pac);
 	});
 
 	describe('script', function(){
