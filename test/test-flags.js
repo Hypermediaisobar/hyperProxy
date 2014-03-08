@@ -65,6 +65,15 @@ describe('Flags', function(){
 		assert.strictEqual(+flags, 0);
 	});
 
+	it('should allow unsetting all flags through `unsetAll()`', function(){
+		flags.set(FLAGS.one | FLAGS.three);
+		flags.unsetAll();
+		assert.strictEqual(flags.one, false);
+		assert.strictEqual(flags.two, false);
+		assert.strictEqual(flags.three, false);
+		assert.strictEqual(+flags, 0);
+	});
+
 	it('should allow setting flags through property name', function(){
 		flags.one = true;
 		assert.strictEqual(flags.one, true);
