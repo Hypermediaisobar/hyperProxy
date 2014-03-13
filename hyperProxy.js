@@ -1,7 +1,7 @@
 var query = require('querystring');
 var URL = require('url');
 
-
+var path = require('path');
 var net = require('net');
 var dns = require('dns');
 var os = require('os');
@@ -110,7 +110,7 @@ var os = require('os');
 		//}
 	};
 
-	var hyperProxy = require('./lib/hyperProxy.js');
+	var hyperProxy = require('hyperProxy/hyperProxy.js');
 	new hyperProxy.start(OVERRIDES, HYPERPROXY);
 */
 
@@ -141,7 +141,7 @@ module.exports.start = function HyperProxy(overrides, settings) {
 			process.exit();
 		});
 
-		var CNTLM = require('./lib/CNTLM.js');
+		var CNTLM = require(path.join(path.dirname(module.filename), 'lib', 'CNTLM.js'));
 		self.settings.cntlm.verbose = self.settings.cntlm.verbose || self.settings.verbose;
 		self.cntlm = new CNTLM(self.settings.cntlm);
 	}
@@ -217,7 +217,7 @@ module.exports.start = function HyperProxy(overrides, settings) {
 		return false;
 	};
 
-	self.pac = require('./lib/PAC.js');
+	self.pac = require(path.join(path.dirname(module.filename), 'lib', 'PAC.js'));
 
 	self.IPs = (function(){
 		var networkInterfaces = os.networkInterfaces();
@@ -277,7 +277,7 @@ module.exports.start = function HyperProxy(overrides, settings) {
 		};
 	};
 
-	self.proxy = new (require('./lib/node-mitm-proxy/proxy.js'))({id: 'hyperProxy', proxy_port: self.settings.http_port, mitm_port: self.settings.https_port, verbose: self.settings.verbose, key_path: self.settings.ssl_key, cert_path: self.settings.ssl_cert}, self.hyperProxyProcessor);
+	self.proxy = new (require(path.join(path.dirname(module.filename), 'lib', 'node-mitm-proxy', 'proxy.js')))({id: 'hyperProxy', proxy_port: self.settings.http_port, mitm_port: self.settings.https_port, verbose: self.settings.verbose, key_path: self.settings.ssl_key, cert_path: self.settings.ssl_cert}, self.hyperProxyProcessor);
 	self.proxy.server.on('listening', function(a){
 		// Proxy is ready.
 	});
@@ -293,7 +293,6 @@ module.exports.start = function HyperProxy(overrides, settings) {
 
 // Dependencies.
 var fs = require('fs');
-var path = require('path');
 
 /*
 	In projects that use separate CSS and JS files there's not much additional work needed.
