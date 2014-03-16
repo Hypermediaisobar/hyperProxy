@@ -98,4 +98,11 @@ describe('Flags', function(){
 		flags.four = true;
 		assert.strictEqual(flags.four, true);
 	});
+
+	it('should allow to chain `set()`, `unset()` and `unsetAll()` functions', function(){
+		var hasFourSet = flags.unsetAll().set(FLAGS.four || FLAGS.one).unset(FLAGS.one).four;
+		assert.strictEqual(flags.one, false);
+		assert.strictEqual(flags.two, false);
+		assert.strictEqual(flags.four, true);
+	});
 });
