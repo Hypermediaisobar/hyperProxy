@@ -90,10 +90,10 @@ describe('Flags', function(){
 		assert.strictEqual(flags.four, undefined);
 	});
 
-	it('should work ok after calling `updateDefines()`', function(){
+	it('should work ok after calling `updateDefinitions()`', function(){
 		assert.strictEqual(flags.four, undefined);
 		FLAGS.four = 0x00000008;
-		flags.updateDefines(FLAGS);
+		flags.updateDefinitions(FLAGS);
 		assert.strictEqual(flags.four, false);
 		flags.four = true;
 		assert.strictEqual(flags.four, true);
