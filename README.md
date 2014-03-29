@@ -153,7 +153,7 @@ mocha
 1. When using CNTLM and node.js 0.10+ requests start to freeze quickly. It worked OK with node.js 0.8+.
    We're probably doing something wrong with handling the streams.
 2. On Windows, PAC does not work well. It's probably because of self-signed certificate and when browser tries to access original
-   files from target and overriden files from our proxy, it gets two different certificates, which may be a cause of the problem.
+   files from the target and overriden files from our proxy, it gets two different certificates, which may be a cause of the problem.
 3. There may be a problem using hyperProxy and VPN connection together. We have yet to test and debug it more.
 
 
