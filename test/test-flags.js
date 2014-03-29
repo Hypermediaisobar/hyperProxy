@@ -4,6 +4,7 @@
  */
 
 var assert = require('assert');
+var path = require('path');
 
 describe('Flags', function(){
 	'use strict';
@@ -17,7 +18,7 @@ describe('Flags', function(){
 	};
 
 	it('should exist', function(){
-		var Flags = require('../lib/Flags.js');
+		var Flags = require(path.join(path.dirname(module.filename), '..', 'lib', 'Flags.js'));
 		assert.ok(Flags);
 		flags = new Flags(0, FLAGS);
 		assert.ok(flags);

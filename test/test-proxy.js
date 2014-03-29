@@ -6,6 +6,7 @@
 var assert = require('assert');
 var https = require('https');
 var http = require('http');
+var path = require('path');
 
 describe('Proxy', function(){
 	'use strict';
@@ -19,7 +20,7 @@ describe('Proxy', function(){
 			testServerPort: 8080
 		};
 
-		self.Proxy = require('../lib/Proxy.js');
+		self.Proxy = require(path.join(path.dirname(module.filename), '..', 'lib', 'Proxy.js'));
 		done();
 	});
 

@@ -4,6 +4,7 @@
  */
 
 var assert = require('assert');
+var path = require('path');
 
 describe('RegExpBuilder', function(){
 	'use strict';
@@ -64,7 +65,7 @@ describe('RegExpBuilder', function(){
 	var antiTest = 'zzzzzzzz';
 
 	before(function(done){
-		builder = require('../lib/RegExpBuilder.js')();
+		builder = require(path.join(path.dirname(module.filename), '..', 'lib', 'RegExpBuilder.js'))();
 		done();
 	});
 

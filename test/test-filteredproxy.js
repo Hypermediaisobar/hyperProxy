@@ -6,6 +6,7 @@
 var assert = require('assert');
 var https = require('https');
 var http = require('http');
+var path = require('path');
 
 describe('FilteredProxy', function(){
 	'use strict';
@@ -19,7 +20,7 @@ describe('FilteredProxy', function(){
 	};
 
 	before(function(done){
-		self.Proxy = require('../lib/FilteredProxy.js');
+		self.Proxy = require(path.join(path.dirname(module.filename), '..', 'lib', 'FilteredProxy.js'));
 		done();
 	});
 
