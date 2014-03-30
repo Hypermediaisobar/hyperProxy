@@ -14,11 +14,11 @@ describe('PAC', function(){
 	var pac;
 
 	var fakeHyperProxy = {
-		http_port: 8000
+		httpPort: 8000
 	};
 
 	var fakeDefaultProxy = {
-		proxy: '127.0.0.1',
+		hostname: '127.0.0.1',
 		port: 8001
 	};
 
@@ -74,7 +74,7 @@ describe('PAC', function(){
 			vm.runInNewContext(js, ctx);
 
 			var r = ctx.FindProxyForURL('test.js', 'www.example.com');
-			assert.strictEqual(r, 'PROXY '+fakeDefaultProxy.proxy+':'+fakeDefaultProxy.port+'; DIRECT');
+			assert.strictEqual(r, 'PROXY '+fakeDefaultProxy.hostname+':'+fakeDefaultProxy.port+'; DIRECT');
 		});
 		it('should return valid JavaScript that creates `FindProxyForURL` function that returns hyper proxy for simple string URL: `http://www.example.com/proxied.js`, and direct for anything else', function(){
 			var js = pac.script({
@@ -90,7 +90,7 @@ describe('PAC', function(){
 			assert.doesNotThrow(ctx.FindProxyForURL);
 			
 			var r = ctx.FindProxyForURL('/proxied.js', 'www.example.com');
-			assert.strictEqual(r, 'PROXY 127.0.0.1:'+fakeHyperProxy.http_port+'; DIRECT', 'URL did not match PROXY access');
+			assert.strictEqual(r, 'PROXY 127.0.0.1:'+fakeHyperProxy.httpPort+'; DIRECT', 'URL did not match PROXY access');
 
 			r = ctx.FindProxyForURL('/direct.js', 'www.example.com');
 			assert.strictEqual(r, 'DIRECT', 'URL did not match DIRECT access');
@@ -109,7 +109,7 @@ describe('PAC', function(){
 			assert.doesNotThrow(ctx.FindProxyForURL);
 			
 			var r = ctx.FindProxyForURL('/proxied.js', 'www.example.com');
-			assert.strictEqual(r, 'PROXY 127.0.0.1:'+fakeHyperProxy.http_port+'; DIRECT', 'URL did not match PROXY access');
+			assert.strictEqual(r, 'PROXY 127.0.0.1:'+fakeHyperProxy.httpPort+'; DIRECT', 'URL did not match PROXY access');
 
 			r = ctx.FindProxyForURL('/direct.js', 'www.example.com');
 			assert.strictEqual(r, 'DIRECT', 'URL did not match DIRECT access');
@@ -128,10 +128,10 @@ describe('PAC', function(){
 			assert.doesNotThrow(ctx.FindProxyForURL);
 			
 			var r = ctx.FindProxyForURL('/proxied.js', 'www.example.com');
-			assert.strictEqual(r, 'PROXY 127.0.0.1:'+fakeHyperProxy.http_port+'; PROXY '+fakeDefaultProxy.proxy+':'+fakeDefaultProxy.port+'; DIRECT', 'URL did not match PROXY access');
+			assert.strictEqual(r, 'PROXY 127.0.0.1:'+fakeHyperProxy.httpPort+'; PROXY '+fakeDefaultProxy.hostname+':'+fakeDefaultProxy.port+'; DIRECT', 'URL did not match PROXY access');
 
 			r = ctx.FindProxyForURL('/direct.js', 'www.example.com');
-			assert.strictEqual(r, 'PROXY '+fakeDefaultProxy.proxy+':'+fakeDefaultProxy.port+'; DIRECT', 'URL did not match DIRECT access');
+			assert.strictEqual(r, 'PROXY '+fakeDefaultProxy.hostname+':'+fakeDefaultProxy.port+'; DIRECT', 'URL did not match DIRECT access');
 		});
 	});
 

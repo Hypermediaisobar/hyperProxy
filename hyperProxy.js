@@ -1,10 +1,9 @@
-var query = require('querystring');
-var URL = require('url');
-
 var path = require('path');
-var net = require('net');
-var dns = require('dns');
-var os = require('os');
+var util = require('util');
+var fs = require('fs');
+
+var FilteredProxy = require(path.join(path.dirname(module.filename), 'lib', 'FilteredProxy.js'));
+var ObjectConverter = require(path.join(path.dirname(module.filename), 'lib', 'ObjectConverter.js'));
 
 /*
 	Example:
@@ -114,24 +113,77 @@ var os = require('os');
 	new hyperProxy.start(OVERRIDES, HYPERPROXY);
 */
 
-module.exports.start = function HyperProxy(overrides, settings) {
+/**
+ *	@constructor
+ *	@param {Object} [options]
+ *	@returns {Object}
+ */
+function HyperProxy(overrides, options) {
 	'use strict';
 
 	if (!(this instanceof HyperProxy)) {
-		return new HyperProxy(overrides, settings);
+		return new HyperProxy(overrides, options);
 	}
 
-	var self = this;
+	/*
+	 *	Convert deprecated options.
+	 */
+	(function(){
+		var map = {
+			'http_port'          : 'port',
+			'https_port'         : 'httpsPort',
+			'pac_port'           : 'pacPort',
+			'ssl_key'            : 'key',
+			'ssl_cert'           : 'cert',
+			'defaultproxy'       : 'proxy',
+			'defaultproxy.proxy' : 'proxy.hostname',
+			'defaultproxy.port'  : 'proxy.port'
+		};
 
-	self.settings = settings;
-	self.overrides = overrides;
-	self.cntlm = false;
+		var converter = new ObjectConverter();
+
+		var deprecated = Object.keys(map);
+		var from;
+		for (var i = 0; i < deprecated.length; i++) {
+			from = converter.find(deprecated[i], options);
+			if (!from) {
+				continue;
+			}
+
+			console.warn('`options.'+deprecated[i]+'` is deprecated. Use `options.'+map[deprecated[i]]+'` instead.');
+		}
+
+		converter.convert(options, options, map);
+
+		if (options.key && options.key.indexOf('-----BEGIN RSA PRIVATE KEY-----') !== 0 && fs.existsSync(options.key)) {
+			console.warn('It looks like `options.key` is not a content of a key, only a path to the key file.');
+			options.key = fs.readFileSync(options.key, 'utf8');
+		}
+		if (options.cert && options.cert.indexOf('-----BEGIN CERTIFICATE-----') !== 0 && fs.existsSync(options.cert)) {
+			console.warn('It looks like `options.cert` is not a content of a cert, only a path to the cert file.');
+			options.cert = fs.readFileSync(options.cert, 'utf8');
+		}
+	})();
 
 	/*
-		Spawn cntlm "gateway", but only if settings.cntlm.port and settings.cntlm.path were set.
-	*/
-	if (self.settings.cntlm && self.settings.cntlm.port && self.settings.cntlm.path) {
+	 *	Inherit FilteredProxy
+	 */
+	FilteredProxy.call(this, options);
 
+	/*
+	 *	Update options with defaults.
+	 */
+	options.cntlm                        = options.cntlm                       || false;
+
+	/**
+	 *	@private
+	 */
+	var self = this;
+
+	/*
+	 *	Spawn cntlm "gateway", but only if options.cntlm.port and options.cntlm.path are set.
+	 */
+	if (options.cntlm && options.cntlm.port && options.cntlm.path) {
 		process.on('cntlmReady', function(PID){
 			console.log('cntlm is running as '+PID);
 		});
@@ -142,169 +194,72 @@ module.exports.start = function HyperProxy(overrides, settings) {
 		});
 
 		var CNTLM = require(path.join(path.dirname(module.filename), 'lib', 'CNTLM.js'));
-		self.settings.cntlm.verbose = self.settings.cntlm.verbose || self.settings.verbose;
-		self.cntlm = new CNTLM(self.settings.cntlm);
+		options.cntlm.verbose = options.cntlm.verbose || options.verbose;
+		this.cntlm = new CNTLM(options.cntlm);
 	}
 
 	/*
-		Setup our JS proxy.
-	*/
-	self.overrider = function(req, res, req_url) {
-		var target = URL.format(req_url);
-		var found = null;
-		var omitCNTLM = false;
-
-		var override = null;
-		for (var name in self.overrides) {
-			if (!self.overrides.hasOwnProperty(name)) {
-				continue;
-			}
-
-			found = null;
-			override = self.overrides[name];
-
-			if (override.hasOwnProperty('match')) {
-				if (override.match instanceof RegExp) {
-					found = override.match.exec(target);
-				}
-				else if (override.match === target) {
-					found = [target];
-				}
-			}
-
-			if (!found || !found.length) {
-				continue;
-			}
-
-			if (override.hasOwnProperty('omitCNTLM') && override.omitCNTLM) {
-				omitCNTLM = true;
-			}
-			if (override.hasOwnProperty('host') && override.host) {
-				req_url.hostname = override.host;
-				delete req_url.host;
-				target = URL.format(req_url);
-			}
-			if (override.hasOwnProperty('callback')) {
-				try {
-					console.log("[" + req_url.hostname + req_url.pathname + "] - Overriding using " + name);
-					var data = '';
-					req.on('data', function(chunk){
-						data += chunk;
-					});
-					req.on('end', function(){
-						data = (data ? query.parse(data) : false);
-						override.callback(res, found, override, data);
-					});
-					return true;
-				}
-				catch (e) {
-					console.log(e);
-				}
-			}
-			break;
+	 *	Setup our JS proxy.
+	 */
+	for (var name in overrides) {
+		if (!overrides.hasOwnProperty(name)) {
+			continue;
 		}
 
-		// No override was found and called, so let's pass it over to the proxy.
-		// If we should use CNTLM, override target, so our Proxy will pass request through CNTLM.
-		if (!omitCNTLM && self.settings.cntlm && self.settings.cntlm.port) {
-			req_url.hostname = 'localhost';
-			req_url.port = self.settings.cntlm.port;
-			req_url.pathname = target;
-			//req_url.protocol = 'http'; // should we force HTTP?
-			req_url.search = '';
-		}
+		this.addFilter(name, overrides[name]);
+	}
 
-		return false;
-	};
+	this.pac = require(path.join(path.dirname(module.filename), 'lib', 'PAC.js'));
 
-	self.pac = require(path.join(path.dirname(module.filename), 'lib', 'PAC.js'));
-
-	self.IPs = (function(){
-		var networkInterfaces = os.networkInterfaces();
-
-		var result = {};
-		for (var n in networkInterfaces) {
-			if (!networkInterfaces.hasOwnProperty(n)) {
-				continue;
-			}
-
-			for (var i = 0; i < networkInterfaces[n].length; i++) {
-				result[networkInterfaces[n][i].address] = {family: networkInterfaces[n][i].family, internal: networkInterfaces[n][i].internal};
-			}
-		}
-
-		return result;
-	})();
-
-	self.isItMyHostname = function(hostname) {
-		var temp = hostname.split(/:/);
-		var port = temp.pop();
-
-		if (port != self.settings.http_port) {
-			return false;
-		}
-
-		var host = temp.join(':');
-
-		if (host === 'localhost') {
-			host = '127.0.0.1';
-		}
-
-		var family = net.isIP(host);
-
-		if (!family) {
-			// TODO: dns lookup?
-		}
-		if (!self.IPs.hasOwnProperty(host)) {
-			return false;
-		}
-
-		return self.IPs[host];
-	};
-
-	self.hyperProxyProcessor = function(proxy) {
-		this.override_request = function(request, req_url, response, type){
-			var url = req_url;
-			console.log("[" + url.hostname + url.pathname + "] - Processor override_request, url: " + URL.format(url));
-
-			if (!self.settings.pac_port && url.pathname === '/proxy.pac' && self.isItMyHostname(url.hostname)) {
-				console.log('Served proxy.pac file.');
-				self.pac.handleRequest(request, response, self.pac.script(self.overrides, self.settings, self.settings.defaultproxy));
-				return true;
-			}
-
-			return self.overrider(request, response, req_url, type);
-		};
-	};
-
-	self.proxy = new (require(path.join(path.dirname(module.filename), 'lib', 'node-mitm-proxy', 'proxy.js')))({id: 'hyperProxy', proxy_port: self.settings.http_port, mitm_port: self.settings.https_port, verbose: self.settings.verbose, key_path: self.settings.ssl_key, cert_path: self.settings.ssl_cert}, self.hyperProxyProcessor);
-	self.proxy.server.on('listening', function(a){
-		// Proxy is ready.
-	});
-
-	if (self.settings.pac_port) {
-		self.pacServer = self.pac.server(self.settings.pac_port, self.overrides, self.settings, self.settings.defaultproxy);
-		self.pacServer.server.on('listening', function(){
-			console.log("\nServing PAC file for your web browser(s) on port "+self.settings.pac_port);
-			console.log("\nTo test without possible additional problems with HTTPS certificates, you can start Chrome browser like this:\n\n---\n\t" + 'chrome --proxy-pac-url="http://127.0.0.1:'+self.settings.pac_port+'" --ignore-certificate-errors --user-data-dir=/tmp/random/unique' + "\n---\n\n");
+	/*
+	 *	Handle proxy.pac serving.
+	 */
+	if (options.pacPort) {
+		this.pacServer = this.pac.server(options.pacPort, overrides, options, options.proxy);
+		this.pacServer.server.on('listening', function(){
+			console.log("\nServing PAC file for your web browser(s) on port "+options.pacPort);
+			console.log("\nTo test without possible additional problems with HTTPS certificates, you can start Chrome browser like this:\n\n---\n\t" + 'chrome --proxy-pac-url="http://127.0.0.1:'+options.pacPort+'" --ignore-certificate-errors --user-data-dir=/tmp/random/unique' + "\n---\n\n");
 		});
 	}
-};
+	else {
+		this.addFilter('proxy.pac', function(request, response, reqURL, isItForMe){
+			if (!isItForMe || reqURL.path.indexOf('/proxy.pac') !== 0) {
+				return;
+			}
 
-// Dependencies.
-var fs = require('fs');
+			self.pac.handleRequest(request, response, self.pac.script(overrides, options, options.proxy));
+
+			return true;
+		});
+	}
+
+	this.start(function(){
+		console.log("\nHTTP(S) proxy is listening on port "+options.httpPort);
+		if (!options.pacPort) {
+			console.log("\nServing PAC file for your web browser(s) at http://"+(options.hostname ? options.hostname : 'localhost') + ':' + options.httpPort + '/proxy.pac');
+			console.log("\nTo test without possible additional problems with HTTPS certificates, you can start Chrome browser like this:\n\n---\n\t" + 'chrome --proxy-pac-url="http://127.0.0.1:'+options.pacPort+'" --ignore-certificate-errors --user-data-dir=/tmp/random/unique' + "\n---\n\n");
+		}
+	});
+}
 
 /*
-	In projects that use separate CSS and JS files there's not much additional work needed.
-	This function tries to find JS, CSS, HTM(L) or SWF file, and if one does not exists, it tries the same file name but without ".min"
-	part (only for JS and CSS and if there is any) - just in case there is a full source data available.
+ *	Inherit EventEmitter
+ */
+util.inherits(HyperProxy, FilteredProxy);
 
-	@res - HTTP response.
-	@found - result of RegExp exec(). found[1] will be used as a file name.
-	@data - matched override object with any custom data that was put there, including required 'path' to the project directory.
-	@post - parsed query from the POST data, e.g., "variable=value" will be passed as "{ variable: value }". Not used.
-*/
-module.exports.overrideJSandCSSgeneric = function (res, found, data, post){
+/**
+ *	In projects that use separate CSS and JS files there's not much additional work needed.
+ *	This function tries to find JS, CSS, HTM(L) or SWF file, and if one does not exists, it tries the same file name but without ".min"
+ *	part (only for JS and CSS and if there is any) - just in case there is a full source data available.
+ *
+ *	@param {Object} res - HTTP response.
+ *	@param {Object} found - result of RegExp exec(). found[1] will be used as a file name.
+ *	@param {Object} data - matched override object with any custom data that was put there, including required 'path' to the project directory.
+ *	@param {Object} post - parsed query from the POST data, e.g., "variable=value" will be passed as "{ variable: value }". Not used.
+ */
+function overrideJSandCSSgeneric(res, found, data, post){
+	'use strict';
+
 	var filename = path.join(data.path, found[1]);
 	var stats;
 
@@ -352,17 +307,19 @@ module.exports.overrideJSandCSSgeneric = function (res, found, data, post){
 		res.write('500 Internal server error\n');
 		res.end();
 	}
-};
+}
 
-/*
-	This function simply overrides requested file with the one specified in the @data['path'] parameter.
+/**
+ *	This function simply overrides requested file with the one specified in the @data['path'] parameter.
+ *
+ *	@param {Object} res - HTTP response.
+ *	@param {Object} found - result of RegExp exec(). Not used.
+ *	@param {Object} data - matched override object with any custom data that was put there, including required 'path' to the target file.
+ *	@param {Object} post - parsed query from the POST data, e.g., "variable=value" will be passed as "{ variable: value }". Not used.
+ */
+function overrideWithStaticOutput(res, found, data, post){
+	'use strict';
 
-	@res - HTTP response.
-	@found - result of RegExp exec(). Not used.
-	@data - matched override object with any custom data that was put there, including required 'path' to the target file.
-	@post - parsed query from the POST data, e.g., "variable=value" will be passed as "{ variable: value }". Not used.
-*/
-module.exports.overrideWithStaticOutput = function(res, found, data, post){
 	var filename = data.path;
 	var stats;
 
@@ -405,4 +362,11 @@ module.exports.overrideWithStaticOutput = function(res, found, data, post){
 		res.write('500 Internal server error\n');
 		res.end();
 	}
-};
+}
+
+/*
+ *	Exports
+ */
+module.exports.start = HyperProxy;
+module.exports.overrideJSandCSSgeneric = overrideJSandCSSgeneric;
+module.exports.overrideWithStaticOutput = overrideWithStaticOutput;
