@@ -48,16 +48,16 @@ Settings may look like this:
 ```javascript
 var settings = {
 	// This port can actually be used for both HTTP and HTTPS.
-	'http_port': 8000,
+	'httpPort': 8000,
 	// This is required for a setup, but there will be no need to access it directly.
-	'https_port': 8001,
+	'httpsPort': 8001,
 	// Set pac_port to false if PAC file server should not be created.
-	'pac_port': 8002,
+	'pacPort': 8002,
 	// Verbosity can be false, true or "debug" for all the stuff possible to be printed in the console.
 	'verbose': false,
 	// Standard key and certificate for handling HTTPS
-	'ssl_key': './certs/server.key',
-	'ssl_cert': './certs/server.crt',
+	'key': './certs/server.key',
+	'cert': './certs/server.crt',
 	// Not needed, unless you need to use corporate proxy with NTLM login,
 	// in which case you can install http://cntlm.sourceforge.net/
 	// and configure it here. Look into hyperProxy.js for more information.
@@ -66,7 +66,7 @@ var settings = {
 	// If you want browser to fallback to default proxy of your choice
 	// (for URLs that you do not want to override)
 	// you can setup it here. Look into hyperProxy.js for more information.
-	'defaultproxy': false
+	'proxy': false
 };
 ```
 
@@ -83,6 +83,8 @@ var overrides = {
 		'callback': hyperProxy.overrideJSandCSSgeneric,
 		// Additional data. Path is needed for default hyperProxy helper functions.
 		'path': './js/',
+		// Tell it to try non-minified versions of JS and CSS first
+		'tryNonMinimizedFiles': true,
 		// If you use CNTLM, here you can set matched URL to omit it.
 		// This can be useful to omit CNTLM for certain URLs without actually overriding them.
 		'omitCNTLM': true

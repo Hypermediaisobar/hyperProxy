@@ -4,119 +4,120 @@ var fs = require('fs');
 
 var FilteredProxy = require(path.join(path.dirname(module.filename), 'lib', 'FilteredProxy.js'));
 var ObjectConverter = require(path.join(path.dirname(module.filename), 'lib', 'ObjectConverter.js'));
-
-/*
-	Example:
-
-	var OVERRIDES = {
-		'override1': {
-			// Optional host, in case of handling domain name added to the Windows hosts file.
-			'host': '127.0.0.1',
-			// Match any JS and CSS file.
-			'match': new RegExp(/\/(.*\.(js|css)$/i),
-			// Optional: When matched, call the following function.
-			'callback': function(res, found, data, post) {
-				// @res   - HTTP response object.
-				// @found - result of "match" RegExp's exec().
-				// @data  - whole override definition object (including match, callback, path and any other attributes).
-				// @post  - data POST-ed in this request, parsed into object, e.g., "variable=value" will be passed as "{ variable: value }".
-				var filename = path.join(data['path'], found[1]);
-				var stats;
-
-				try {
-					stats = fs.lstatSync(filename); // lstatSync() throws if path doesn't exist.
-				}
-				catch (e) {
-					return;
-				}
-
-				if (stats.isFile()) {
-					// path exists and is a file
-					var ext = path.extname(filename).split(".")[1];
-					res.writeHead(200, {'Content-Type': (ext == 'js' ? 'application/x-javascript' : 'text/css')} );
-
-					var fileStream = fs.createReadStream(filename);
-					fileStream.pipe(res);
-				}
-				else {
-					res.writeHead(500, {'Content-Type': 'text/plain'});
-					res.write('500 Internal server error\n');
-					res.end();
-				}
-			},
-			// Look for an override in the following directory.
-			'path': '/www/overrides/',
-			// Optional: do not pass the request through CNTLM (in case there is no callback specified).
-			'omitCNTLM': true,
-			// Any other data that may be used by the callback function.
-			'myVariable': 'example'
-		},
-		'summit.meetjs.pl': {
-			// Match any JS and CSS file.
-			'match': 'https://summit.meetjs.pl/',
-			// Optional: When matched, call the following function.
-			'callback': hyperProxy.overrideWithStaticOutput,
-			// Look for an override in the following directory.
-			'path': '/www/overrides/index.html',
-			// Optional: do not pass the request through CNTLM (in case there is no callback specified).
-			'omitCNTLM': true
-		},
-		'override3': {
-			// etc...
-		}
-	};
-
-	var HYPERPROXY = {
-		'http_port': 8000,
-		'https_port': 8001,
-		// Set pac_port to false if PAC file server should not be started.
-		// Without separate PAC file server, hyperProxy will serve `http://localhost:[http_port]/proxy.pac` file instead.
-		'pac_port': false,//8002
-		'verbose': true,//'debug',
-		'ssl_key': './certs/ssl-key.pem',
-		'ssl_cert': './certs/ssl-cert.pem',
-
-		// Set CNTLM to `false`, if cntlm proxy is not required to connect to the world.
-		cntlm: {
-			// Set this to the port number that is used by cntlm already running in the background
-			// or that will be tried for spawned cntlm proxy.
-			// Set this to false, if cntlm should not be used at all.
-			'port': false,//3130,
-			// Where was cntlm installed and configured (directory should contain both cntlm executable and cntlm.ini files)?
-			// Set to false, if cntlm is already running and should not be controlled by our proxy
-			'path': false,//'C:\\Program Files (x86)\\Cntlm\\',
-			// How many ports should be tried before giving up and exiting?
-			// This is needed when port specified above is already used and path is specified, i.e.,
-			// cntlm is not running yet and should be spawned.
-			'hitpoints': 5,
-			// Should we always try to kill any other CNTLM running, before starting ours?
-			'killOnBeforeStart': true,
-			// Do not change this one!
-			'_PID': false
-		},
-
-		// Default proxy location is used in the PAC file output.
-		// Set defaultproxy to false to not use any default proxy in the PAC file output
-		// (PAC will return DIRECT connection value in that case).
-		defaultproxy: false
-		//defaultproxy: {
-		//	'proxy': 'hyper.proxy',
-		//	'port': 3128
-		//}
-		//defaultproxy: {
-		//	'proxy': '127.0.0.1',
-		//	'port': 8080
-		//}
-	};
-
-	var hyperProxy = require('hyperProxy/hyperProxy.js');
-	new hyperProxy.start(OVERRIDES, HYPERPROXY);
-*/
+var PAC = require(path.join(path.dirname(module.filename), 'lib', 'PAC.js'));
 
 /**
+ *	@example
+ *
+ *	```javascript
+ *	var OVERRIDES = {
+ *		'override1': {
+ *			// Optional host, in case of handling domain name added to the Windows hosts file.
+ *			'host': '127.0.0.1',
+ *			// Match any JS and CSS file.
+ *			'match': new RegExp(/\/(.*\.(js|css)$/i),
+ *			// Optional: When matched, call the following function.
+ *			'callback': function(res, found, data, post) {
+ *				// @res   - HTTP response object.
+ *				// @found - result of "match" RegExp's exec().
+ *				// @data  - whole override definition object (including match, callback, path and any other attributes).
+ *				// @post  - data POST-ed in this request, parsed into object, e.g., "variable=value" will be passed as "{ variable: value }".
+ *				var filename = path.join(data['path'], found[1]);
+ *				var stats;
+ *
+ *				try {
+ *					stats = fs.lstatSync(filename); // lstatSync() throws if path doesn't exist.
+ *				}
+ *				catch (e) {
+ *					return;
+ *				}
+ *
+ *				if (stats.isFile()) {
+ *					// path exists and is a file
+ *					var ext = path.extname(filename).split(".")[1];
+ *					res.writeHead(200, {'Content-Type': (ext == 'js' ? 'application/x-javascript' : 'text/css')} );
+ *
+ *					var fileStream = fs.createReadStream(filename);
+ *					fileStream.pipe(res);
+ *				}
+ *				else {
+ *					res.writeHead(500, {'Content-Type': 'text/plain'});
+ *					res.write('500 Internal server error\n');
+ *					res.end();
+ *				}
+ *			},
+ *			// Look for an override in the following directory.
+ *			'path': '/www/overrides/',
+ *			// Optional: do not pass the request through Proxy (in case there is no callback specified).
+ *			'proxy': false,
+ *			// Any other data that may be used by the callback function.
+ *			'myVariable': 'example'
+ *		},
+ *		'summit.meetjs.pl': {
+ *			// Match any JS and CSS file.
+ *			'match': 'https://summit.meetjs.pl/',
+ *			// Optional: When matched, call the following function.
+ *			'callback': hyperProxy.overrideWithStaticOutput,
+ *			// Look for an override in the following directory.
+ *			'path': '/www/overrides/index.html',
+ *			// Optional: do not pass the request through Proxy (in case there is no callback specified).
+ *			'proxy': false
+ *		},
+ *		'override3': {
+ *			// etc...
+ *		}
+ *	};
+ *
+ *	var HYPERPROXY = {
+ *		'httpPort': 8000,
+ *		'httpsPort': 8001,
+ *		// Set pac_port to false if PAC file server should not be started.
+ *		// Without separate PAC file server, hyperProxy will serve `http://localhost:[http_port]/proxy.pac` file instead.
+ *		'pacPort': false,//8002
+ *		'verbose': true,//'debug',
+ *		'key': './certs/ssl-key.pem',
+ *		'cert': './certs/ssl-cert.pem',
+ *
+ *		// Set CNTLM to `false`, if cntlm proxy is not required to connect to the world.
+ *		cntlm: {
+ *			// Set this to the port number that is used by cntlm already running in the background
+ *			// or that will be tried for spawned cntlm proxy.
+ *			// Set this to false, if cntlm should not be used at all.
+ *			'port': false,//3130,
+ *			// Where was cntlm installed and configured (directory should contain both cntlm executable and cntlm.ini files)?
+ *			// Set to false, if cntlm is already running and should not be controlled by our proxy
+ *			'path': false,//'C:\\Program Files (x86)\\Cntlm\\',
+ *			// How many ports should be tried before giving up and exiting?
+ *			// This is needed when port specified above is already used and path is specified, i.e.,
+ *			// cntlm is not running yet and should be spawned.
+ *			'hitpoints': 5,
+ *			// Should we always try to kill any other CNTLM running, before starting ours?
+ *			'killOnBeforeStart': true,
+ *			// Do not change this one!
+ *			'_PID': false
+ *		},
+ *
+ *		// Default proxy location is used in the PAC file output.
+ *		// Set proxy to false to not use any default proxy in the PAC file output
+ *		// (PAC will return DIRECT connection value in that case).
+ *		proxy: false
+ *		//proxy: {
+ *		//	'hostname': 'hyper.proxy',
+ *		//	'port': 3128
+ *		//}
+ *		//proxy: {
+ *		//	'hostname': '127.0.0.1',
+ *		//	'port': 8080
+ *		//}
+ *	};
+ *
+ *	var hyperProxy = require('hyperProxy/hyperProxy.js');
+ *	new hyperProxy.start(OVERRIDES, HYPERPROXY);
+ *	```
+ *
  *	@constructor
+ *	@param {Object} overrides
  *	@param {Object} [options]
- *	@returns {Object}
  */
 function HyperProxy(overrides, options) {
 	'use strict';
@@ -209,13 +210,11 @@ function HyperProxy(overrides, options) {
 		this.addFilter(name, overrides[name]);
 	}
 
-	this.pac = require(path.join(path.dirname(module.filename), 'lib', 'PAC.js'));
-
 	/*
 	 *	Handle proxy.pac serving.
 	 */
 	if (options.pacPort) {
-		this.pacServer = this.pac.server(options.pacPort, overrides, options, options.proxy);
+		this.pacServer = PAC.server(options.pacPort, overrides, options, options.proxy);
 		this.pacServer.server.on('listening', function(){
 			console.log("\nServing PAC file for your web browser(s) on port "+options.pacPort);
 			console.log("\nTo test without possible additional problems with HTTPS certificates, you can start Chrome browser like this:\n\n---\n\t" + 'chrome --proxy-pac-url="http://127.0.0.1:'+options.pacPort+'" --ignore-certificate-errors --user-data-dir=/tmp/random/unique' + "\n---\n\n");
@@ -227,7 +226,7 @@ function HyperProxy(overrides, options) {
 				return;
 			}
 
-			self.pac.handleRequest(request, response, self.pac.script(overrides, options, options.proxy));
+			PAC.handleRequest(request, response, PAC.script(overrides, options, options.proxy));
 
 			return true;
 		});
@@ -249,8 +248,11 @@ util.inherits(HyperProxy, FilteredProxy);
 
 /**
  *	In projects that use separate CSS and JS files there's not much additional work needed.
- *	This function tries to find JS, CSS, HTM(L) or SWF file, and if one does not exists, it tries the same file name but without ".min"
- *	part (only for JS and CSS and if there is any) - just in case there is a full source data available.
+ *	This function tries serve JS, CSS, HTM(L) or SWF files.
+ *
+ *	`data` has to have `path` property pointing to the local directory containing the files to serve.
+ *	If `data` has `tryNonMinimizedFiles` property set to true, then this function will automatically try to serve non-minified
+ *	(without the ".min" part) versions of the files.
  *
  *	@param {Object} res - HTTP response.
  *	@param {Object} found - result of RegExp exec(). found[1] will be used as a file name.
@@ -263,9 +265,13 @@ function overrideJSandCSSgeneric(res, found, data, post){
 	var filename = path.join(data.path, found[1]);
 	var stats;
 
-	if (!fs.existsSync(filename) && filename.match(/\.(js|css)$/i)) {
+	var filenameUnminified = false;
+	if (data.tryNonMinimizedFiles && filename.match(/\.(js|css)$/i)) {
 		// Try without ".min" for JS and CSS
-		filename = filename.replace(/\.min/, '');
+		filenameUnminified = filename.replace(/\.min/, '');
+		if (fs.existsSync(filenameUnminified)) {
+			filename = filenameUnminified;
+		}
 	}
 
 	try {
