@@ -202,12 +202,14 @@ function HyperProxy(overrides, options) {
 	/*
 	 *	Setup our JS proxy.
 	 */
-	for (var name in overrides) {
-		if (!overrides.hasOwnProperty(name)) {
-			continue;
-		}
+	if (overrides && overrides instanceof Object) {
+		for (var name in overrides) {
+			if (!overrides.hasOwnProperty(name)) {
+				continue;
+			}
 
-		this.addFilter(name, overrides[name]);
+			this.addFilter(name, overrides[name]);
+		}
 	}
 
 	/*
