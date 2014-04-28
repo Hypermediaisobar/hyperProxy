@@ -74,11 +74,11 @@ Overrides may look like this:
 
 ```javascript
 var overrides = {
-	// This will override all request for minimized jQuery 1.10.2 (on ANY site)
+	// This will override all request for minimized jQuery 1.11.0 (on ANY site)
 	// so non-minimized version from local disk will be returned.
 	'jquery': {
 		// Regexp matching URLs that should be overriden.
-		'match': new RegExp(/\/(jquery-1.10.2\.min\.(js))$/i),
+		'match': new RegExp(/\/(jquery-1.11.0\.min\.(js))$/i),
 		// Callback function that will be called fo overriden URLs.
 		'callback': hyperProxy.overrideJSandCSSgeneric,
 		// Additional data. Path is needed for default hyperProxy helper functions.

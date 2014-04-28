@@ -174,7 +174,7 @@ function HyperProxy(overrides, options) {
 	/*
 	 *	Update options with defaults.
 	 */
-	options.cntlm                        = options.cntlm                       || false;
+	options.cntlm = options.cntlm || false;
 
 	/**
 	 *	@private
