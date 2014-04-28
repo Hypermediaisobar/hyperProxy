@@ -26,7 +26,7 @@ var overrides = {
 		'omitCNTLM': true
 	}
 };
-console.log(path.join(path.dirname(module.filename), 'certs', 'server.key'));
+
 /*
 	Our proxy settings.
 */
