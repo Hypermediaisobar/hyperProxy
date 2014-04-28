@@ -130,8 +130,8 @@ hyperProxy exports two helper functions: overrideJSandCSSgeneric and overrideWit
 ### hyperProxy.overrideJSandCSSgeneric(response, found, data, post)
 
 In projects that use separate CSS and JS files there's not much additional work needed.
-This function tries to find JS, CSS, HTM(L) or SWF file, and if one does not exists, it tries the same file name but without ".min"
-part (only for JS and CSS and if there is any) - just in case there is a full source data available.
+This function tries to find JS, CSS, HTM(L) or SWF file. If `data` has `tryNonMinimizedFiles` property set to true,
+then this function will automatically try to serve non-minified (without the ".min" part) versions of the files.
 
 
 ### hyperProxy.overrideWithStaticOutput(response, found, data, post)
