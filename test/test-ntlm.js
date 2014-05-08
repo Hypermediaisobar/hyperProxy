@@ -3,7 +3,7 @@
  *	http://visionmedia.github.io/mocha/
  *
  *	These tests contain and use example data collected and prepared by Eric Glass
- *	available at from http://davenport.sourceforge.net/ntlm.html
+ *	available at http://davenport.sourceforge.net/ntlm.html
  */
 
 var assert = require('assert');
