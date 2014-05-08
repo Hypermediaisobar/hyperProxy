@@ -409,74 +409,69 @@ describe('NTLM', function(){
 
 
 
-		it.skip('should work on real server data', function(done){
-			// TODO: Rewrite this test, because it is totally wrong. We have to have total control over socket,
-			//       which we do not have when using node's agents.
-			var credentials = new ntlm.credentials();
+		it('should work on real server data', function(done){
+			// FIXME: ENTER YOUR REAL CREDENTIALS HERE
+			var user = '';
+			var domain = '';
+			var password = '';
+
+			assert.ok(user, 'Real user name is required for this test');
+			assert.ok(domain, 'Real domain name is required for this test');
+			assert.ok(password, 'Real user password is required for this test');
+
+			var credentials = new ntlm.credentials(user, domain, password);
 
 			ntlm.securityLevel = 4;
 			var message1 = ntlm.createType1Message(credentials);
 
-			var http = require('http');
-			var options = {
-				'host': 'localhost',
-				'port': 8888,
-				'path': 'http://jquery.com/',
-				'headers': {
-					'Host': 'jquery.com',
-					'Proxy-Authorization': 'NTLM '+message1.toString('base64')
-				}
-				//,'agent': false
-			};
+			var headers = '';
+			var stage = 1;
 
-			var handleNTLM = function(res){
-				console.log(res.headers);
-				var message2 = ntlm.readType2Message(res.headers['proxy-authenticate']);
-				assert.ok(message2, 'Wrong Type2 Message from server');
-
-				var message3 = ntlm.createType3Message(message2, credentials);
-
-				options.headers['Proxy-Authorization'] = 'NTLM '+message3.toString('base64');
-				http.get(options, function(res2){
-					console.log(res2.headers);
-
-					assert.strictEqual(res2.statusCode, 200, 'Wrong response statusCode: '+res2.statusCode);
-
-					res2.on('data', function(data){
-						console.log(data.toString('utf8'));
-					});
-					res2.on('end', function(){
-						done();
-					});
-				});
-			};
-
-			http.get(options, function(res){
-				console.log(res.headers);
-				res.on('data', function(data){});
-				if (res.statusCode == 407) {
-					if (!res.headers['proxy-authenticate'] || res.headers['proxy-authenticate'].indexOf('NTLM') !== 0) {
-						console.log('Unknown authentication method');
-						done();
+			var net = require('net');
+			var client = net.connect({host: 'proxy.hyper', port: 3128}, function(){
+				stage = 1;
+				client.write("HEAD http://jquery.com/ HTTP/1.1\r\nHost: jquery.com\r\nConnection: keep-alive\r\nProxy-Authorization: NTLM "+message1.toString('base64')+"\r\n\r\n");
+			});
+			client.on('data', function(data){
+				if (stage === 1) {
+					headers += data.toString();
+					if (!headers.match(/\r\n\r\n/)) {
 						return;
 					}
-					//res.pipe(process.stdout);
 
-					if (res.headers['proxy-authenticate'] === 'NTLM') {
-						console.log('Proxy requested NTLM authorization');
-						options.headers['Proxy-Authorization'] = 'NTLM '+message1.toString('base64');
-						options.agent = http.globalAgent;
-						http.get(options, handleNTLM);
+					var auth = headers.match(/Proxy-Authenticate:\s*([^\r\n]+)/);
+					if (!auth) {
+						console.warn('Something went wrong, we did not receive Type2 message.');
+						client.end();
 					}
-					else {
-						handleNTLM(res);
+
+					var message2 = ntlm.readType2Message(auth[1]);
+					assert.ok(message2, 'Wrong Type2 Message from server');
+
+					var message3 = ntlm.createType3Message(message2, credentials);
+					stage = 2;
+					headers = '';
+
+					client.write("GET http://jquery.com/ HTTP/1.1\r\nHost: jquery.com\r\nConnection: keep-alive\r\nProxy-Authorization: NTLM "+message3.toString('base64')+"\r\n\r\n");
+				}
+				else if (stage === 2) {
+					headers += data.toString();
+					if (!headers.match(/\r\n\r\n/)) {
+						return;
 					}
+
+					var code = headers.match(/HTTP\/1\.\d\s+(\d+)/);
+					assert.ok(code[1] != 407, 'Looks like NTLM authentication failed.');
 				}
 				else {
-					console.log('Authenthication not needed.');
-					done();
+					assert('Unknown stage: '+stage);
 				}
+
 			});
+			client.on('end', function(){
+				done();
+			});
+			client.setKeepAlive(true);
 		});
 	});
 });
