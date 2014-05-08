@@ -14,28 +14,18 @@ In both cases front-end developer could use a tool that allows working with loca
 
 While there are great plugins available for various browsers and editors, which allow for dynamic modfication of JavaScript and CSS, they all are browser specific. Usually they work only on one or two of the main three browsers.
 That is why a local proxy may be a better solution. It allows to override only specific files with local copies, and can work for all the web browsers (or any other applications) at the same time.
-One such proxy is an application called Fiddler, which can be really helpfull when debugging websites.
+One such proxy is an application called Fiddler, which can be really helpful when debugging websites.
 
 Node.js is easy to install on all major platforms and scripts are written in JavaScript, so they should be easy to write by any front-end developer, once they know some basic nodejs functions.
 If we create a base or a library that implements most of the stuff and there will be only a simple configuration needed for a developer to start overriding URLs, then there will be almost nothing new to learn to start working. And there still will be an easy way to implement additional functionality, all in JavaScript.
 
-hyperProxy is a proxy that should be easy enough to configure and setup by every front-end developer. It also starts a server that serves a PAC file.
-Using PAC allows browser to proxy requests only for those URLs that we wanted to override. Rest of the requests will be go directly to the target URL.
+hyperProxy is a proxy that should be easy enough to configure and setup by every front-end developer.
+It also can serve a PAC (Proxy Auto Config) file, which allows browsers to proxy requests only for those URLs that we wanted to override or manipulate. Rest of the requests will go directly to target URL. You can read more about PAC on Wikipedia: http://en.wikipedia.org/wiki/Proxy_auto-config.
 
 
 ## Installation
 
 If you do not have nodejs installed yet, go to the http://nodejs.org/, download and install it.
-
-hyperProxy (or more exactly it's PACServer sub-module and node-mitm-proxy on which hyperProxy currently depends) requires `colors` module.
-Before you start using hyperProxy, be sure to install that module for your hyperProxy, for example using following command lines:
-
-```sh
-cd hyperProxy/example
-npm install colors
-```
-
-If you're on Windows, you got commandline terminal installed with node.js. Run it to open console window, and enter commands mentioned above there.
 
 
 ## Configuration
@@ -51,7 +41,8 @@ var settings = {
 	'httpPort': 8000,
 	// This is required for a setup, but there will be no need to access it directly.
 	'httpsPort': 8001,
-	// Set pac_port to false if PAC file server should not be created.
+	// Set pacPort to false if PAC file server should not be created.
+	// Without separate PAC file server, hyperProxy will serve `http://localhost:[httpPort]/proxy.pac` file instead.
 	'pacPort': 8002,
 	// Verbosity can be false, true or "debug" for all the stuff possible to be printed in the console.
 	'verbose': false,
@@ -166,12 +157,12 @@ mocha
    to the system/browser to prevent warnings about "unofficial" certificates.
 3. Create something similar to http://thechangelog.com/frak-takes-an-entirely-different-approach-to-generating-regular-expressions/
    to make creation of overrides even simpler for people who do not like regular expressions.
-4. Resign from dependancy on external proxy library. This will most probably be implemented along with the 2nd point above.
 
 
 ## Thanks
 
 1. Arkadiusz Ryćkowski, for telling me about the idea to override target files with local files.
-2. node-http-proxy: https://github.com/nodejitsu/node-http-proxy for great module
-3. node-mitm-proxy: https://github.com/horaci/node-mitm-proxy for great module on which hyperProxy is currently based
-4. node-http-mitm-proxy: https://github.com/nearinfinity/node-http-mitm-proxy for example of multi-certificate implementation
+2. cntlm: http://cntlm.sourceforge.net/ for great NTLM authenticating proxy
+3. node-http-proxy: https://github.com/nodejitsu/node-http-proxy for great module
+4. node-mitm-proxy: https://github.com/horaci/node-mitm-proxy for great module on which hyperProxy was based at first
+5. node-http-mitm-proxy: https://github.com/nearinfinity/node-http-mitm-proxy for example of multi-certificate implementation

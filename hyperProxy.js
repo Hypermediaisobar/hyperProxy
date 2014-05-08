@@ -72,7 +72,7 @@ var PAC = require(path.join(path.dirname(module.filename), 'lib', 'PAC.js'));
  *		'httpPort': 8000,
  *		'httpsPort': 8001,
  *		// Set pac_port to false if PAC file server should not be started.
- *		// Without separate PAC file server, hyperProxy will serve `http://localhost:[http_port]/proxy.pac` file instead.
+ *		// Without separate PAC file server, hyperProxy will serve `http://localhost:[httpPort]/proxy.pac` file instead.
  *		'pacPort': false,//8002
  *		'verbose': true,//'debug',
  *		'key': './certs/ssl-key.pem',
