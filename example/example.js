@@ -1,25 +1,28 @@
 // Dependencies.
 var fs = require('fs');
 var path = require('path');
-var hyperProxy = require('../hyperProxy.js');
+var hyperProxy = require(path.join(path.dirname(module.filename), '..', 'hyperProxy.js'));
 
 /*---------------------------------------------------------------------------------------------------
 	SETTINGS
 ---------------------------------------------------------------------------------------------------*/
 
 var overrides = {
-	// This will override all request for minimized jQuery 1.10.2 (on ANY site)
+	// This will override all request for minimized jQuery (on ANY site, ANY version)
 	// so non-minimized version from local disk will be returned.
-	'jquery-1.10.2': {
-		'match': new RegExp(/\/(jquery-1.10.2\.min\.(js))$/i),
+	// Try to get http://code.jquery.com/jquery-1.11.0.min.js through the proxy now ;).
+	'jquery-min': {
+		'match': new RegExp(/\/(jquery-[\d\.]+\.min\.(js))$/i),
 		'callback': hyperProxy.overrideJSandCSSgeneric,
-		'path': './js/',
+		'path': path.join(__dirname, 'js'),
 		'omitCNTLM': true
 	},
+	// Same as above, but for non-versioned file name and
+	// using static output just to show hot it can be used :).
 	'jquery': {
 		'match': new RegExp(/\/jquery\.min\.js$/i),
 		'callback': hyperProxy.overrideWithStaticOutput,
-		'path': './js/jquery-1.10.2.js',
+		'path': path.join(__dirname, 'js', 'jquery-1.11.0.js'),
 		'omitCNTLM': true
 	}
 };
@@ -28,13 +31,14 @@ var overrides = {
 	Our proxy settings.
 */
 var settings = {
-	'http_port': 8000,
-	'https_port': 8001,
-	// Set pac_port to false if PAC file server should not be created.
-	'pac_port': 8002,
+	'httpPort': 8000,
+	'httpsPort': 8001,
+	// Set pacPort to false if PAC file server should not be started.
+	// Without separate PAC file server, hyperProxy will serve `http://localhost:[httpPort]/proxy.pac` file instead.
+	'pacPort': false,//8002,
 	'verbose': false,//'debug',
-	'ssl_key': './certs/server.key',
-	'ssl_cert': './certs/server.crt',
+	'key': fs.readFileSync(path.join(path.dirname(module.filename), 'certs', 'server.key'), 'utf8'),
+	'cert': fs.readFileSync(path.join(path.dirname(module.filename), 'certs', 'server.crt'), 'utf8'),
 
 	/*
 		Set CNTLM to `false`, if cntlm proxy is not required to connect to the world.
@@ -59,21 +63,21 @@ var settings = {
 
 	/*
 		Default proxy location is used in the PAC file output.
-		Set defaultproxy to false to not use any default proxy in the PAC file output
+		Set proxy to false to not use any default proxy in the PAC file output
 		(PAC will return DIRECT connection value in that case).
 	*/
-	'defaultproxy': false
+	'proxy': false
 	/*
 	// Or:
-	defaultproxy: {
-		'proxy': 'company.proxy',
+	proxy: {
+		'hostname': 'company.proxy',
 		'port': 8888
 	}
 	*/
 	/*
 	// Or:
-	defaultproxy: {
-		'proxy': '127.0.0.1',
+	proxy: {
+		'hostname': '127.0.0.1',
 		'port': 8080
 	}
 	*/
@@ -102,7 +106,9 @@ var path = require('path');
 	@post - parsed query from the POST data, e.g., "variable=value" will be passed as "{ variable: value }".
 */
 function overrideJSandCSSonCQ(res, found, data, post){
-	var dir = path.join(data['path'], found[1]);
+	'use strict';
+
+	var dir = path.join(data.path, found[1]);
 	var ls = fs.readFileSync(path.join(dir, found[3] + '.txt'), 'utf8');
 	var lines = ls.match(/[^\r\n]+/g);
 	var output = '';
@@ -125,4 +131,4 @@ function overrideJSandCSSonCQ(res, found, data, post){
 	START OUR PROXY
 ---------------------------------------------------------------------------------------------------*/
 
-new hyperProxy.start(overrides, settings);
+hyperProxy.start(overrides, settings);

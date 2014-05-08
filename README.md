@@ -48,16 +48,16 @@ Settings may look like this:
 ```javascript
 var settings = {
 	// This port can actually be used for both HTTP and HTTPS.
-	'http_port': 8000,
+	'httpPort': 8000,
 	// This is required for a setup, but there will be no need to access it directly.
-	'https_port': 8001,
+	'httpsPort': 8001,
 	// Set pac_port to false if PAC file server should not be created.
-	'pac_port': 8002,
+	'pacPort': 8002,
 	// Verbosity can be false, true or "debug" for all the stuff possible to be printed in the console.
 	'verbose': false,
 	// Standard key and certificate for handling HTTPS
-	'ssl_key': './certs/server.key',
-	'ssl_cert': './certs/server.crt',
+	'key': './certs/server.key',
+	'cert': './certs/server.crt',
 	// Not needed, unless you need to use corporate proxy with NTLM login,
 	// in which case you can install http://cntlm.sourceforge.net/
 	// and configure it here. Look into hyperProxy.js for more information.
@@ -66,7 +66,7 @@ var settings = {
 	// If you want browser to fallback to default proxy of your choice
 	// (for URLs that you do not want to override)
 	// you can setup it here. Look into hyperProxy.js for more information.
-	'defaultproxy': false
+	'proxy': false
 };
 ```
 
@@ -74,15 +74,17 @@ Overrides may look like this:
 
 ```javascript
 var overrides = {
-	// This will override all request for minimized jQuery 1.10.2 (on ANY site)
+	// This will override all request for minimized jQuery 1.11.0 (on ANY site)
 	// so non-minimized version from local disk will be returned.
 	'jquery': {
 		// Regexp matching URLs that should be overriden.
-		'match': new RegExp(/\/(jquery-1.10.2\.min\.(js))$/i),
+		'match': new RegExp(/\/(jquery-1.11.0\.min\.(js))$/i),
 		// Callback function that will be called fo overriden URLs.
 		'callback': hyperProxy.overrideJSandCSSgeneric,
 		// Additional data. Path is needed for default hyperProxy helper functions.
 		'path': './js/',
+		// Tell it to try non-minified versions of JS and CSS first
+		'tryNonMinimizedFiles': true,
 		// If you use CNTLM, here you can set matched URL to omit it.
 		// This can be useful to omit CNTLM for certain URLs without actually overriding them.
 		'omitCNTLM': true
@@ -128,8 +130,8 @@ hyperProxy exports two helper functions: overrideJSandCSSgeneric and overrideWit
 ### hyperProxy.overrideJSandCSSgeneric(response, found, data, post)
 
 In projects that use separate CSS and JS files there's not much additional work needed.
-This function tries to find JS, CSS, HTM(L) or SWF file, and if one does not exists, it tries the same file name but without ".min"
-part (only for JS and CSS and if there is any) - just in case there is a full source data available.
+This function tries to find JS, CSS, HTM(L) or SWF file. If `data` has `tryNonMinimizedFiles` property set to true,
+then this function will automatically try to serve non-minified (without the ".min" part) versions of the files.
 
 
 ### hyperProxy.overrideWithStaticOutput(response, found, data, post)
@@ -137,12 +139,23 @@ part (only for JS and CSS and if there is any) - just in case there is a full so
 This function simply overrides requested file with the one specified in the `data['path']` parameter (data is an object from the overrides object).
 
 
+## Testing
+
+Some small parts of the module can be run through automated testing with mocha (http://visionmedia.github.io/mocha/). You need to have it installed before running the tests.
+To run all available tests, use following command lines:
+
+```sh
+cd hyperProxy
+mocha
+```
+
+
 ## Known problems
 
 1. When using CNTLM and node.js 0.10+ requests start to freeze quickly. It worked OK with node.js 0.8+.
    We're probably doing something wrong with handling the streams.
 2. On Windows, PAC does not work well. It's probably because of self-signed certificate and when browser tries to access original
-   files from target and overriden files from our proxy, it gets two different certificates, which may be a cause of the problem.
+   files from the target and overriden files from our proxy, it gets two different certificates, which may be a cause of the problem.
 3. There may be a problem using hyperProxy and VPN connection together. We have yet to test and debug it more.
 
 
