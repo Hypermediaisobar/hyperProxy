@@ -14,7 +14,7 @@ In both cases front-end developer could use a tool that allows working with loca
 
 While there are great plugins available for various browsers and editors, which allow for dynamic modfication of JavaScript and CSS, they all are browser specific. Usually they work only on one or two of the main three browsers.
 That is why a local proxy may be a better solution. It allows to override only specific files with local copies, and can work for all the web browsers (or any other applications) at the same time.
-One such proxy is an application called Fiddler, which can be really helpfull when debugging websites.
+One such proxy is an application called Fiddler, which can be really helpful when debugging websites.
 
 Node.js is easy to install on all major platforms and scripts are written in JavaScript, so they should be easy to write by any front-end developer, once they know some basic nodejs functions.
 If we create a base or a library that implements most of the stuff and there will be only a simple configuration needed for a developer to start overriding URLs, then there will be almost nothing new to learn to start working. And there still will be an easy way to implement additional functionality, all in JavaScript.
@@ -41,7 +41,8 @@ var settings = {
 	'httpPort': 8000,
 	// This is required for a setup, but there will be no need to access it directly.
 	'httpsPort': 8001,
-	// Set pac_port to false if PAC file server should not be created.
+	// Set pacPort to false if PAC file server should not be created.
+	// Without separate PAC file server, hyperProxy will serve `http://localhost:[httpPort]/proxy.pac` file instead.
 	'pacPort': 8002,
 	// Verbosity can be false, true or "debug" for all the stuff possible to be printed in the console.
 	'verbose': false,
