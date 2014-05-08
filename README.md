@@ -19,23 +19,13 @@ One such proxy is an application called Fiddler, which can be really helpfull wh
 Node.js is easy to install on all major platforms and scripts are written in JavaScript, so they should be easy to write by any front-end developer, once they know some basic nodejs functions.
 If we create a base or a library that implements most of the stuff and there will be only a simple configuration needed for a developer to start overriding URLs, then there will be almost nothing new to learn to start working. And there still will be an easy way to implement additional functionality, all in JavaScript.
 
-hyperProxy is a proxy that should be easy enough to configure and setup by every front-end developer. It also starts a server that serves a PAC file.
-Using PAC allows browser to proxy requests only for those URLs that we wanted to override. Rest of the requests will be go directly to the target URL.
+hyperProxy is a proxy that should be easy enough to configure and setup by every front-end developer.
+It also can serve a PAC (Proxy Auto Config) file, which allows browsers to proxy requests only for those URLs that we wanted to override or manipulate. Rest of the requests will go directly to target URL. You can read more about PAC on Wikipedia: http://en.wikipedia.org/wiki/Proxy_auto-config.
 
 
 ## Installation
 
 If you do not have nodejs installed yet, go to the http://nodejs.org/, download and install it.
-
-hyperProxy (or more exactly it's PACServer sub-module and node-mitm-proxy on which hyperProxy currently depends) requires `colors` module.
-Before you start using hyperProxy, be sure to install that module for your hyperProxy, for example using following command lines:
-
-```sh
-cd hyperProxy/example
-npm install colors
-```
-
-If you're on Windows, you got commandline terminal installed with node.js. Run it to open console window, and enter commands mentioned above there.
 
 
 ## Configuration
@@ -166,12 +156,12 @@ mocha
    to the system/browser to prevent warnings about "unofficial" certificates.
 3. Create something similar to http://thechangelog.com/frak-takes-an-entirely-different-approach-to-generating-regular-expressions/
    to make creation of overrides even simpler for people who do not like regular expressions.
-4. Resign from dependancy on external proxy library. This will most probably be implemented along with the 2nd point above.
 
 
 ## Thanks
 
 1. Arkadiusz Ryćkowski, for telling me about the idea to override target files with local files.
-2. node-http-proxy: https://github.com/nodejitsu/node-http-proxy for great module
-3. node-mitm-proxy: https://github.com/horaci/node-mitm-proxy for great module on which hyperProxy is currently based
-4. node-http-mitm-proxy: https://github.com/nearinfinity/node-http-mitm-proxy for example of multi-certificate implementation
+2. cntlm: http://cntlm.sourceforge.net/ for great NTLM authenticating proxy
+3. node-http-proxy: https://github.com/nodejitsu/node-http-proxy for great module
+4. node-mitm-proxy: https://github.com/horaci/node-mitm-proxy for great module on which hyperProxy was based at first
+5. node-http-mitm-proxy: https://github.com/nearinfinity/node-http-mitm-proxy for example of multi-certificate implementation
