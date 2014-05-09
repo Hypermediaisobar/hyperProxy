@@ -27,6 +27,12 @@ It also can serve a PAC (Proxy Auto Config) file, which allows browsers to proxy
 
 If you do not have nodejs installed yet, go to the http://nodejs.org/, download and install it.
 
+If you want to make hyperProxy to generate SSL certificates for overriden hosts on-demand, install PEM (https://github.com/andris9/pem) module:
+
+```javascript
+npm install pem
+```
+
 
 ## Configuration
 

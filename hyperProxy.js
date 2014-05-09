@@ -100,15 +100,18 @@ var PAC = require(path.join(path.dirname(module.filename), 'lib', 'PAC.js'));
  *		// Default proxy location is used in the PAC file output.
  *		// Set proxy to false to not use any default proxy in the PAC file output
  *		// (PAC will return DIRECT connection value in that case).
- *		proxy: false
+ *		proxy: false,
  *		//proxy: {
  *		//	'hostname': 'hyper.proxy',
  *		//	'port': 3128
- *		//}
+ *		//},
  *		//proxy: {
  *		//	'hostname': '127.0.0.1',
  *		//	'port': 8080
- *		//}
+ *		//},
+ *		// Use on-demand server keys per each tunneled (when connecting to httpPort for HTTP target) host.
+ *		// This functionality depends on PEM module (https://github.com/andris9/pem).
+ *		useSNI: true
  *	};
  *
  *	var hyperProxy = require('hyperProxy/hyperProxy.js');
@@ -238,7 +241,7 @@ function HyperProxy(overrides, options) {
 		console.log("\nHTTP(S) proxy is listening on port "+options.httpPort);
 		if (!options.pacPort) {
 			console.log("\nServing PAC file for your web browser(s) at http://"+(options.hostname ? options.hostname : 'localhost') + ':' + options.httpPort + '/proxy.pac');
-			console.log("\nTo test without possible additional problems with HTTPS certificates, you can start Chrome browser like this:\n\n---\n\t" + 'chrome --proxy-pac-url="http://127.0.0.1:'+options.pacPort+'" --ignore-certificate-errors --user-data-dir=/tmp/random/unique' + "\n---\n\n");
+			console.log("\nTo test without possible additional problems with HTTPS certificates, you can start Chrome browser like this:\n\n---\n\t" + 'chrome --proxy-pac-url="http://127.0.0.1:'+options.httpPort+'" --ignore-certificate-errors --user-data-dir=/tmp/random/unique' + "\n---\n\n");
 		}
 	});
 }
