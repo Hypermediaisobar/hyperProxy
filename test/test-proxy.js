@@ -7,6 +7,8 @@ var assert = require('assert');
 var https = require('https');
 var http = require('http');
 var path = require('path');
+var net = require('net');
+var tls = require('tls');
 
 describe('Proxy', function(){
 	'use strict';
@@ -62,7 +64,8 @@ describe('Proxy', function(){
 			self.server = false;
 			self.server = http.createServer(function(request, response){
 				response.writeHead(200, {
-					'Content-Type': 'text/plain'
+					'Content-Type': 'text/plain',
+					'Content-Length': self.content.length
 				});
 				response.write(self.content);
 				response.end();
@@ -116,7 +119,8 @@ describe('Proxy', function(){
 			self.server = false;
 			self.server = https.createServer(self.options, function(request, response){
 				response.writeHead(200, {
-					'Content-Type': 'text/plain'
+					'Content-Type': 'text/plain',
+					'Content-Length': self.content.length
 				});
 				response.write(self.content);
 				response.end();
@@ -133,7 +137,33 @@ describe('Proxy', function(){
 			self.proxy.stop(cleanup);
 		});
 
-		it('should get correct answer from server', function(done){
+		it('should get correct answer from server through HTTPS proxy', function(done){
+			this.timeout(2000);
+
+			self.target = {
+				hostname: self.options.host,
+				port: self.options.httpsPort,
+				path: '/',
+				headers: {
+					'Host': self.options.host+':'+self.options.testServerPort,
+					'Content-Type': 'text/plain; charset=utf8'
+				},
+				agent: false
+			};
+			var request = https.request(self.target, function(response){
+				var downloaded = '';
+				response.on('data', function(data){
+					downloaded += data;
+				});
+				response.on('end', function(){
+					assert.strictEqual(downloaded, self.content);
+					done();
+				});
+			});
+			request.end();
+		});
+
+		it('should get correct answer from server through HTTPS tunnel on HTTP proxy', function(done){
 			this.timeout(2000);
 
 			// Based on: https://github.com/joyent/node/issues/2474#issuecomment-3481078
@@ -141,24 +171,25 @@ describe('Proxy', function(){
 				host: self.options.host,
 				port: self.options.httpPort,
 				method: 'CONNECT',
+				agent: false,
 				path: self.options.host+':'+self.options.testServerPort,
 			}).on('connect', function(res, socket, head) {
-				// should check res.statusCode here
-				var request = https.get({
-					host: self.options.host,
-					port: self.options.testServerPort,
-					socket: socket, // using a tunnel
-					agent: false    // cannot use a default agent
-				}, function(response) {
-					var text = '';
-					response.setEncoding('utf8');
-					response.on('data', function(data){
-						text += data;
+				var text = '';
+
+				var ssocket = tls.connect(0, {socket: socket}, function(){
+					ssocket.write('GET / HTTP/1.1\r\n' + 
+								'Host: '+self.options.host+':'+self.options.testServerPort+'\r\n' +
+								'Connection: close\r\n' +
+								'\r\n');
+
+					ssocket.on('data', function(data){
+						text += data.toString('utf8');
 					});
-					response.on('end', function(){
-						assert.strictEqual(text, self.content);
+					ssocket.on('end', function(){
+						assert.strictEqual(text.replace(/^[\w\W]*\r\n\r\n/, ''), self.content);
 						done();
 					});
+					
 				});
 			}).end();
 		});
