@@ -100,15 +100,18 @@ var PAC = require(path.join(path.dirname(module.filename), 'lib', 'PAC.js'));
  *		// Default proxy location is used in the PAC file output.
  *		// Set proxy to false to not use any default proxy in the PAC file output
  *		// (PAC will return DIRECT connection value in that case).
- *		proxy: false
+ *		proxy: false,
  *		//proxy: {
  *		//	'hostname': 'hyper.proxy',
  *		//	'port': 3128
- *		//}
+ *		//},
  *		//proxy: {
  *		//	'hostname': '127.0.0.1',
  *		//	'port': 8080
- *		//}
+ *		//},
+ *		// Use on-demand server keys per each tunneled (when connecting to httpPort for HTTP target) host.
+ *		// This functionality depends on PEM module (https://github.com/andris9/pem).
+ *		useSNI: true
  *	};
  *
  *	var hyperProxy = require('hyperProxy/hyperProxy.js');
