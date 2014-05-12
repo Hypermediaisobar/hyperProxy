@@ -241,7 +241,7 @@ function HyperProxy(overrides, options) {
 		console.log("\nHTTP(S) proxy is listening on port "+options.httpPort);
 		if (!options.pacPort) {
 			console.log("\nServing PAC file for your web browser(s) at http://"+(options.hostname ? options.hostname : 'localhost') + ':' + options.httpPort + '/proxy.pac');
-			console.log("\nTo test without possible additional problems with HTTPS certificates, you can start Chrome browser like this:\n\n---\n\t" + 'chrome --proxy-pac-url="http://127.0.0.1:'+options.httpPort+'" --ignore-certificate-errors --user-data-dir=/tmp/random/unique' + "\n---\n\n");
+			console.log("\nTo test without possible additional problems with HTTPS certificates, you can start Chrome browser like this:\n\n---\n\t" + 'chrome --proxy-pac-url="http://'+(options.hostname ? options.hostname : 'localhost') + ':' + options.httpPort + '/proxy.pac" --ignore-certificate-errors --user-data-dir=/tmp/random/unique' + "\n---\n\n");
 		}
 	});
 }
@@ -259,10 +259,13 @@ util.inherits(HyperProxy, FilteredProxy);
  *	If `data` has `tryNonMinimizedFiles` property set to true, then this function will automatically try to serve non-minified
  *	(without the ".min" part) versions of the files.
  *
+ *	Always returns true, to let FilteredProxy know, that response was handled, and should not be proxied.
+ *
  *	@param {Object} res - HTTP response.
  *	@param {Object} found - result of RegExp exec(). found[1] will be used as a file name.
  *	@param {Object} data - matched override object with any custom data that was put there, including required 'path' to the project directory.
  *	@param {Object} post - parsed query from the POST data, e.g., "variable=value" will be passed as "{ variable: value }". Not used.
+ *	@returns {boolean}
  */
 function overrideJSandCSSgeneric(res, found, data, post){
 	'use strict';
@@ -286,7 +289,7 @@ function overrideJSandCSSgeneric(res, found, data, post){
 		res.writeHead(404, {'Content-Type': 'text/plain'});
 		res.write('404 Not Found\n');
 		res.end();
-		return;
+		return true;
 	}
 
 	if (stats.isFile()) {
@@ -318,15 +321,20 @@ function overrideJSandCSSgeneric(res, found, data, post){
 		res.write('500 Internal server error\n');
 		res.end();
 	}
+
+	return true;
 }
 
 /**
  *	This function simply overrides requested file with the one specified in the @data['path'] parameter.
  *
+ *	Always returns true, to let FilteredProxy know, that response was handled, and should not be proxied.
+ *
  *	@param {Object} res - HTTP response.
  *	@param {Object} found - result of RegExp exec(). Not used.
  *	@param {Object} data - matched override object with any custom data that was put there, including required 'path' to the target file.
  *	@param {Object} post - parsed query from the POST data, e.g., "variable=value" will be passed as "{ variable: value }". Not used.
+ *	@returns {boolean}
  */
 function overrideWithStaticOutput(res, found, data, post){
 	'use strict';
@@ -341,7 +349,7 @@ function overrideWithStaticOutput(res, found, data, post){
 		res.writeHead(404, {'Content-Type': 'text/plain'});
 		res.write('404 Not Found\n');
 		res.end();
-		return;
+		return true;
 	}
 
 	if (stats.isFile()) {
@@ -373,6 +381,8 @@ function overrideWithStaticOutput(res, found, data, post){
 		res.write('500 Internal server error\n');
 		res.end();
 	}
+
+	return true;
 }
 
 /*
