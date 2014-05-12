@@ -238,7 +238,7 @@ function HyperProxy(overrides, options) {
 		console.log("\nHTTP(S) proxy is listening on port "+options.httpPort);
 		if (!options.pacPort) {
 			console.log("\nServing PAC file for your web browser(s) at http://"+(options.hostname ? options.hostname : 'localhost') + ':' + options.httpPort + '/proxy.pac');
-			console.log("\nTo test without possible additional problems with HTTPS certificates, you can start Chrome browser like this:\n\n---\n\t" + 'chrome --proxy-pac-url="http://127.0.0.1:'+options.pacPort+'" --ignore-certificate-errors --user-data-dir=/tmp/random/unique' + "\n---\n\n");
+			console.log("\nTo test without possible additional problems with HTTPS certificates, you can start Chrome browser like this:\n\n---\n\t" + 'chrome --proxy-pac-url="http://'+(options.hostname ? options.hostname : 'localhost') + ':' + options.httpPort + '/proxy.pac" --ignore-certificate-errors --user-data-dir=/tmp/random/unique' + "\n---\n\n");
 		}
 	});
 }
