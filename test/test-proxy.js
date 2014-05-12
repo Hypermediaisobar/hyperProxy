@@ -172,7 +172,7 @@ describe('Proxy', function(){
 				port: self.options.httpPort,
 				method: 'CONNECT',
 				agent: false,
-				path: self.options.host+':'+self.options.testServerPort,
+				path: self.options.host+':'+self.options.testServerPort
 			}).on('connect', function(res, socket, head) {
 				self.target = {
 					hostname: self.options.host,
@@ -337,6 +337,65 @@ describe('Proxy', function(){
 						done();
 					});
 				}).end();
+			}).end();
+		});
+	});
+
+	describe('Certificates', function(){
+		before(function(done){
+			self.options.useSNI = true;
+
+			var init = self.proxy.whenAllDone.bind(self, {todo: 2}, done);
+			self.proxy.start(init);
+
+			self.content = "HELLO WORLD!\n";
+			self.server = false;
+			self.server = https.createServer(self.options, function(request, response){
+				response.writeHead(200, {
+					'Content-Type': 'text/plain',
+					'Content-Length': self.content.length
+				});
+				response.write(self.content);
+				response.end();
+			});
+			self.server.listen(self.options.testServerPort, self.options.host, 511, init);
+		});
+
+		after(function(done){
+			var cleanup = self.proxy.whenAllDone.bind(self, {todo: 2}, done);
+
+			self.server.close(cleanup);
+			self.proxy.stop(cleanup);
+
+			self.options.useSNI = false;
+		});
+
+		it('should get correct answer from server', function(done){
+			this.timeout(2000);
+
+			// Based on: https://github.com/joyent/node/issues/2474#issuecomment-3481078
+			var tunnel = http.request({ // establishing a tunnel
+				host: self.options.host,
+				port: self.options.httpPort,
+				headers: {
+					'Host': 'example.com'
+				},
+				method: 'CONNECT',
+				agent: false,
+				path: self.options.host+':'+self.options.testServerPort
+			}).on('connect', function(res, socket, head) {
+				var ssocket = tls.connect(0, {socket: socket}, function(){
+					ssocket.write('GET / HTTP/1.1\r\n' +
+						'Host: '+self.options.host+':'+self.options.testServerPort+'\r\n' +
+						'Connection: close\r\n' +
+						'\r\n');
+					var cert = ssocket.getPeerCertificate();
+					//console.log(cert);
+					assert.strictEqual(cert.subject.O, 'hyperProxy');
+					assert.strictEqual(cert.subject.CN, 'example.com');
+				});
+				ssocket.on('data', function(data){});
+				ssocket.on('end', done);
 			}).end();
 		});
 	});
