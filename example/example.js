@@ -125,6 +125,8 @@ function overrideJSandCSSonCQ(res, found, data, post){
 	});
 	res.write.call(res, output);
 	res.end();
+
+	return true;
 }
 
 /*---------------------------------------------------------------------------------------------------
