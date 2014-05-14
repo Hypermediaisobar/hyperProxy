@@ -69,8 +69,6 @@ describe('Proxy', function(){
 				});
 				response.write(self.content);
 				response.end();
-				//request.end();
-				//self.server.close();
 			});
 			self.server.listen(self.options.testServerPort, self.options.host, 511, function(){
 				init();
@@ -124,8 +122,6 @@ describe('Proxy', function(){
 				});
 				response.write(self.content);
 				response.end();
-				//request.end();
-				//self.server.close();
 			});
 			self.server.listen(self.options.testServerPort, self.options.host, 511, init);
 		});
@@ -315,7 +311,7 @@ describe('Proxy', function(){
 				port: options2.httpPort,
 				method: 'CONNECT',
 				agent: false,
-				path: 'https://' + self.options.host+':'+self.options.testServerPort + '/hello',
+				path: self.options.host+':'+self.options.testServerPort,
 			}).on('connect', function(res, socket, head) {
 				self.target = {
 					hostname: self.options.host,
