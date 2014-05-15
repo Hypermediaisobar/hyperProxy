@@ -381,14 +381,14 @@ describe('Proxy', function(){
 				path: self.options.host+':'+self.options.testServerPort
 			}).on('connect', function(res, socket, head) {
 				var ssocket = tls.connect(0, {socket: socket}, function(){
-					var cert = ssocket.getPeerCertificate();
-					assert.strictEqual(cert.subject.O, 'hyperProxy');
-					assert.strictEqual(cert.subject.CN, 'example.com');
-
 					ssocket.write('GET / HTTP/1.1\r\n' +
 						'Host: '+self.options.host+':'+self.options.testServerPort+'\r\n' +
 						'Connection: close\r\n' +
 						'\r\n');
+
+					var cert = ssocket.getPeerCertificate();
+					assert.strictEqual(cert.subject.O, 'hyperProxy');
+					assert.strictEqual(cert.subject.CN, 'example.com');
 				});
 				ssocket.on('data', function(data){});
 				ssocket.on('end', done);
