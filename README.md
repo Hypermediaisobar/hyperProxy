@@ -89,7 +89,7 @@ var overrides = {
 };
 ```
 
-After that, you just need to start hyperProxy (this assumes that your proxy file is next to the hyperProxy subdirectory, where hyperProxy files are located):
+After that, you just need to start hyperProxy (this is for example.js, which is in a subdirectory of hyperProxy directory):
 
 ```javascript
 var hyperProxy = require('../hyperProxy.js');
@@ -104,7 +104,7 @@ After setting up a file, just run it using node.js in the directory of your hype
 node example.js
 ```
 
-If you want to work on the best configuration, and want to change overrides often, it's good to install supervisor (https://github.com/isaacs/node-supervisor) module:
+If you are working on your configuration, and want to change overrides often, it's good to install supervisor (https://github.com/isaacs/node-supervisor) module:
 
 ```sh
 npm install -g supervisor
@@ -116,7 +116,7 @@ and then use it to run your proxy:
 supervisor example.js
 ```
 
-That will allow you to save changes to your proxy configuration and use them without a need to restart the proxy manually every time.
+It will restart the proxy automatically whenever you change your proxy/configuration file.
 
 
 ## Helper functions
@@ -124,14 +124,18 @@ That will allow you to save changes to your proxy configuration and use them wit
 hyperProxy exports two helper functions: overrideJSandCSSgeneric and overrideWithStaticOutput.
 
 
-### hyperProxy.overrideJSandCSSgeneric(response, found, data, post)
+```javascript
+hyperProxy.overrideJSandCSSgeneric(response, found, data, post)
+```
 
 In projects that use separate CSS and JS files there's not much additional work needed.
 This function tries to find JS, CSS, HTM(L) or SWF file. If `data` has `tryNonMinimizedFiles` property set to true,
 then this function will automatically try to serve non-minified (without the ".min" part) versions of the files.
 
 
-### hyperProxy.overrideWithStaticOutput(response, found, data, post)
+```javascript
+hyperProxy.overrideWithStaticOutput(response, found, data, post)
+```
 
 This function simply overrides requested file with the one specified in the `data['path']` parameter (data is an object from the overrides object).
 
