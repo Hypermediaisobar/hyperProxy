@@ -123,12 +123,65 @@ describe('NTLM', function(){
 	it('should read valid flags', function(){
 		var Flags = require(path.join(path.dirname(module.filename), '..', 'lib', 'Flags.js'));
 		// These are the flags used by CNTLM (http://cntlm.sourceforge.net/)
-		var setups = [0xa208b205, 0xa208b207, 0xb207, 0xb205, 0xb206];
-		setups.forEach(function(value){
-			var flags = new Flags(value, ntlm.FLAGS);
-			console.log();
+		var setups = {
+			0xa208b205: {
+				'negotiateUnicode': true,
+				'requestTarget': true,
+				'negotiateNTLM': true,
+				'negotiateDomain': true,
+				'negotiateWorkstation': true,
+				'negotiateAlwaysSign': true,
+				'negotiateNTLM2Key': true,
+				'negotiateVersion': true,
+				'negotiate128': true
+			},
+			0xa208b207: {
+				'negotiateUnicode': true,
+				'negotiateOEM': true,
+				'requestTarget': true,
+				'negotiateNTLM': true,
+				'negotiateDomain': true,
+				'negotiateWorkstation': true,
+				'negotiateAlwaysSign': true,
+				'negotiateNTLM2Key': true,
+				'negotiateVersion': true,
+				'negotiate128': true
+			},
+			0xb207: {
+				'negotiateUnicode': true,
+				'negotiateOEM': true,
+				'requestTarget': true,
+				'negotiateNTLM': true,
+				'negotiateDomain': true,
+				'negotiateWorkstation': true,
+				'negotiateAlwaysSign': true
+			},
+			0xb205: {
+				'negotiateUnicode': true,
+				'requestTarget': true,
+				'negotiateNTLM': true,
+				'negotiateDomain': true,
+				'negotiateWorkstation': true,
+				'negotiateAlwaysSign': true
+			},
+			0xb206: {
+				'negotiateOEM': true,
+				'requestTarget': true,
+				'negotiateNTLM': true,
+				'negotiateDomain': true,
+				'negotiateWorkstation': true,
+				'negotiateAlwaysSign': true
+			}
+		};
+		Object.keys(setups).forEach(function(setup){
+			var flags = new Flags(setup, ntlm.FLAGS);
+			/*console.log();
 			console.log('Flags '+flags.toString('hex'));
-			console.log(flags);
+			console.log(flags);*/
+			Object.keys(flags).forEach(function(prop){
+				var v = setups[setup].hasOwnProperty(prop) ? setups[setup][prop] : false;
+				assert.strictEqual(v, flags[prop], 'In '+flags.toString('hex')+' property '+prop+' was incorrect: '+v+' !== '+flags[prop]);
+			});
 		});
 	});
 
