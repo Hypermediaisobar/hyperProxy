@@ -142,12 +142,23 @@ This function simply overrides requested file with the one specified in the `dat
 
 ## Testing
 
-Some small parts of the module can be run through automated testing with mocha (http://visionmedia.github.io/mocha/). You need to have it installed before running the tests.
+Some parts of the module can be run through automated testing with mocha (http://visionmedia.github.io/mocha/). You need to have it installed before running the tests.
 To run all available tests, use following command lines:
 
 ```sh
 cd hyperProxy
 mocha
+```
+
+
+## Generating documentation
+
+All code is documented with JSDoc 3 comments (http://usejsdoc.org/). You need to have it installed to generate documentation.
+To create documentation, use following command lines:
+
+```sh
+cd hyperProxy
+jsdoc hyperProxy.js lib/*.js README.md -d documentation -c jsdoc.json
 ```
 
 
