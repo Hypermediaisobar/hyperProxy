@@ -337,9 +337,11 @@ describe('Proxy', function(){
 		});
 	});
 
-	describe.skip('Certificates', function(){
+	describe('Certificates', function(){
 		before(function(done){
 			self.options.useSNI = true;
+			// changing SNI option requires rebuilding server :(
+			self.proxy = new self.Proxy(self.options);
 
 			var init = self.proxy.whenAllDone.bind(self, {todo: 2}, done);
 			self.proxy.start(init);
@@ -366,7 +368,34 @@ describe('Proxy', function(){
 			self.options.useSNI = false;
 		});
 
-		it('should get correct answer from server', function(done){
+		it('should get correct certificate from HTTPS server', function(done){
+			this.timeout(2000);
+
+			// We are connecting twice, because current version of node does not have asynchronous SNICallback.
+			// TODO: simplify this to a single connection when node v0.12 shows up.
+			var ssocket = tls.connect(self.options.httpsPort, self.options.host, {servername: 'example.com'}, function(){
+				ssocket.write('GET / HTTP/1.1\r\n' +
+					'Host: example.com\r\n' +
+					'Connection: close\r\n' +
+					'\r\n');
+			});
+			ssocket.on('data', function(data){});
+			ssocket.on('end', function(){
+				var ssocket = tls.connect(self.options.httpsPort, self.options.host, {servername: 'example.com'}, function(){
+					ssocket.write('GET / HTTP/1.1\r\n' +
+						'Host: example.com\r\n' +
+						'Connection: close\r\n' +
+						'\r\n');
+					var cert = ssocket.getPeerCertificate();
+					assert.strictEqual(cert.subject.O, 'hyperProxy');
+					assert.strictEqual(cert.subject.CN, 'example.com');
+				});
+				ssocket.on('data', function(data){});
+				ssocket.on('end', done);
+			});
+		});
+
+		it('should get correct certificate from HTTPS-over-HTTP proxy', function(done){
 			this.timeout(2000);
 
 			// Based on: https://github.com/joyent/node/issues/2474#issuecomment-3481078
@@ -380,7 +409,7 @@ describe('Proxy', function(){
 				agent: false,
 				path: self.options.host+':'+self.options.testServerPort
 			}).on('connect', function(res, socket, head) {
-				var ssocket = tls.connect(0, {socket: socket}, function(){
+				var ssocket = tls.connect(0, {socket: socket, servername: 'example.com'}, function(){
 					ssocket.write('GET / HTTP/1.1\r\n' +
 						'Host: '+self.options.host+':'+self.options.testServerPort+'\r\n' +
 						'Connection: close\r\n' +
@@ -394,7 +423,7 @@ describe('Proxy', function(){
 			}).end();
 		});
 
-		it('should get correct answer from server - part 2', function(done){
+		it('should get correct certificate from HTTPS proxy', function(done){
 			this.timeout(2000);
 
 			https.request({hostname: self.options.host, port: self.options.httpsPort, headers: {host: 'example.com'}, path: 'https://'+self.options.host+':'+self.options.testServerPort+'/hello'}, function(res){
@@ -403,6 +432,7 @@ describe('Proxy', function(){
 					var cert = res.connection.getPeerCertificate();
 					assert.strictEqual(cert.subject.O, 'hyperProxy');
 					assert.strictEqual(cert.subject.CN, 'example.com');
+					done();
 				});
 
 			}).end();
