@@ -211,7 +211,7 @@ describe('FilteredProxy', function(){
 			var hijackText = 'Hijacked you again, mwahahaha!';
 
 			self.proxy.addFilter('hijackme2', {
-				match: /^\/hijackme2/i,
+				match: /\/hijackme2$/i,
 				callback: function(response, found, self){
 					response.writeHead(200, {
 						'Content-Type': 'text/plain'
@@ -241,7 +241,7 @@ describe('FilteredProxy', function(){
 			var requestData = 'A simple POST data';
 
 			self.proxy.addFilter('hijackme3', {
-				match: /^\/hijackme3/i,
+				match: /\/hijackme3$/i,
 				callback: function(response, found, self){
 					response.writeHead(200, {
 						'Content-Type': 'text/plain'
@@ -265,7 +265,7 @@ describe('FilteredProxy', function(){
 			var pathname = '/hijackme5';
 
 			self.proxy.addFilter('hijackme4', {
-				match: /^\/hijackme4/i,
+				match: /\/hijackme4$/i,
 				url: {
 					pathname: pathname
 				}
@@ -277,11 +277,11 @@ describe('FilteredProxy', function(){
 			});
 		});
 
-		it('should change requested URL from "/hijackme4" to "/hijackme5" with a filter object and URL override using string match', function(done){
+		it('should change requested URL from "/hijackme5" to "/hijackme6" with a filter object and URL override using string match', function(done){
 			var pathname = '/hijackme6';
 
 			self.proxy.addFilter('hijackme5', {
-				match: '/hijackme5',
+				match: 'http://' + self.options.hostname + ':' + self.options.testServerPort + '/hijackme5',
 				url: {
 					pathname: pathname
 				}
@@ -314,12 +314,12 @@ describe('FilteredProxy', function(){
 			});
 		});
 
-		it('should ignore use filter with `myselfOnly` set to true when reuqest is targetted to itself', function(done){
+		it('should ignore use filter with `myselfOnly` set to true when request is targetted to itself', function(done){
 			var pathname = '/hijackme6';
 			var hijackText = 'I just call, to say, how much it works ok!';
 
 			self.proxy.addFilter('hijackme6', {
-				match: pathname,
+				match: 'http://' + self.options.hostname + ':' + self.options.port + pathname,
 				callback: function(response, found, self){
 					assert('This should not be called');
 					response.writeHead(200, {
