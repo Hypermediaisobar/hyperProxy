@@ -33,6 +33,16 @@ If you want to make hyperProxy to generate SSL certificates for overriden hosts 
 npm install pem
 ```
 
+On Windows (or any other operating system without OpenSSL installed) you will also need to install OpenSSL and add it to environment's PATH variable:
+
+1. Download OpenSSL for your operating system from http://www.openssl.org/related/binaries.html
+2. Install it
+3. Update environment variable, so it points to the openssl binary, e.g., the one where openssl.exe is located.
+4. Check if command works:
+   ```sh
+   openssl version
+   ```
+
 
 ## Configuration
 

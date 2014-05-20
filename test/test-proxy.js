@@ -369,29 +369,26 @@ describe('Proxy', function(){
 		});
 
 		it('should get correct certificate from HTTPS server', function(done){
-			this.timeout(2000);
+			this.timeout(3000);
 
 			// We are connecting twice, because current version of node does not have asynchronous SNICallback.
-			// TODO: simplify this to a single connection when node v0.12 shows up.
+			// TODO: simplify this to a single connection, without setTimout, when node v0.12 shows up.
 			var ssocket = tls.connect(self.options.httpsPort, self.options.host, {servername: 'example.com'}, function(){
-				ssocket.write('GET / HTTP/1.1\r\n' +
-					'Host: example.com\r\n' +
-					'Connection: close\r\n' +
-					'\r\n');
+				ssocket.end();
 			});
 			ssocket.on('data', function(data){});
 			ssocket.on('end', function(){
-				var ssocket = tls.connect(self.options.httpsPort, self.options.host, {servername: 'example.com'}, function(){
-					ssocket.write('GET / HTTP/1.1\r\n' +
-						'Host: example.com\r\n' +
-						'Connection: close\r\n' +
-						'\r\n');
-					var cert = ssocket.getPeerCertificate();
-					assert.strictEqual(cert.subject.O, 'hyperProxy');
-					assert.strictEqual(cert.subject.CN, 'example.com');
-				});
-				ssocket.on('data', function(data){});
-				ssocket.on('end', done);
+				setTimeout(function(){
+					var ssocket = tls.connect(self.options.httpsPort, self.options.host, {servername: 'example.com'}, function(){
+						ssocket.end();
+
+						var cert = ssocket.getPeerCertificate();
+						assert.strictEqual(cert.subject.O, 'hyperProxy');
+						assert.strictEqual(cert.subject.CN, 'example.com');
+
+						done();
+					});
+				}, 1000); // give it time to create certificates
 			});
 		});
 
