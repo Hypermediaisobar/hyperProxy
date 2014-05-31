@@ -5,6 +5,7 @@ var fs = require('fs');
 var FilteredProxy = require(path.join(path.dirname(module.filename), 'lib', 'FilteredProxy.js'));
 var ObjectConverter = require(path.join(path.dirname(module.filename), 'lib', 'ObjectConverter.js'));
 var PAC = require(path.join(path.dirname(module.filename), 'lib', 'PAC.js'));
+var MIME = require(path.join(path.dirname(module.filename), 'lib', 'MIME.js'));
 
 /**
  *	@example
@@ -252,8 +253,8 @@ function HyperProxy(overrides, options) {
 util.inherits(HyperProxy, FilteredProxy);
 
 /**
- *	In projects that use separate CSS and JS files there's not much additional work needed.
- *	This function tries serve JS, CSS, HTM(L) or SWF files.
+ *	In projects that use separate CSS and JS files it is easy to override them with this function.
+ *	It tries to serve JS, CSS, HTM(L), SWF, image and font files with correct MIME type.
  *
  *	`data` has to have `path` property pointing to the local directory containing the files to serve.
  *	If `data` has `tryNonMinimizedFiles` property set to true, then this function will automatically try to serve non-minified
@@ -262,12 +263,12 @@ util.inherits(HyperProxy, FilteredProxy);
  *	Always returns true, to let FilteredProxy know, that response was handled, and should not be proxied.
  *
  *	@param {Object} res - HTTP response.
- *	@param {Object} found - result of RegExp exec(). found[1] will be used as a file name.
+ *	@param {Object} found - result of RegExp exec(). found[1] will be used as a file path and name relative to the @data['path'].
  *	@param {Object} data - matched override object with any custom data that was put there, including required 'path' to the project directory.
  *	@param {Object} post - parsed query from the POST data, e.g., "variable=value" will be passed as "{ variable: value }". Not used.
  *	@returns {boolean}
  */
-function overrideJSandCSSgeneric(res, found, data, post){
+function overrideWithFilesFromPath(res, found, data, post){
 	'use strict';
 
 	var filename = path.join(data.path, found[1]);
@@ -294,22 +295,8 @@ function overrideJSandCSSgeneric(res, found, data, post){
 
 	if (stats.isFile()) {
 		// path exists, is a file
-		var ext = path.extname(filename).toLowerCase();
-		var mime = 'text/plain';
-		if (ext === '.js') {
-			mime = 'application/x-javascript';
-		}
-		else if (ext === '.css') {
-			mime = 'text/css';
-		}
-		else if (ext === '.html' || ext === '.htm') {
-			mime = 'text/html';
-		}
-		else if (ext === '.swf') {
-			mime = 'application/x-shockwave-flash';
-		}
 		res.writeHead(200, {
-			'Content-Type': mime,
+			'Content-Type': MIME(filename),
 			'Content-Length': stats.size
 		});
 
@@ -318,7 +305,7 @@ function overrideJSandCSSgeneric(res, found, data, post){
 	}
 	else {
 		res.writeHead(500, {'Content-Type': 'text/plain'});
-		res.write('500 Internal server error\n');
+		res.write('500 Internal server error\n'+filename+' is not a file.\n');
 		res.end();
 	}
 
@@ -336,7 +323,7 @@ function overrideJSandCSSgeneric(res, found, data, post){
  *	@param {Object} post - parsed query from the POST data, e.g., "variable=value" will be passed as "{ variable: value }". Not used.
  *	@returns {boolean}
  */
-function overrideWithStaticOutput(res, found, data, post){
+function overrideWithSpecifiedFile(res, found, data, post){
 	'use strict';
 
 	var filename = data.path;
@@ -354,22 +341,8 @@ function overrideWithStaticOutput(res, found, data, post){
 
 	if (stats.isFile()) {
 		// path exists, is a file
-		var ext = path.extname(filename).toLowerCase();
-		var mime = 'text/plain';
-		if (ext === '.js') {
-			mime = 'application/x-javascript';
-		}
-		else if (ext === '.css') {
-			mime = 'text/css';
-		}
-		else if (ext === '.html' || ext === '.htm') {
-			mime = 'text/html';
-		}
-		else if (ext === '.swf') {
-			mime = 'application/x-shockwave-flash';
-		}
 		res.writeHead(200, {
-			'Content-Type': mime,
+			'Content-Type': MIME(filename),
 			'Content-Length': stats.size
 		});
 
@@ -378,7 +351,7 @@ function overrideWithStaticOutput(res, found, data, post){
 	}
 	else {
 		res.writeHead(500, {'Content-Type': 'text/plain'});
-		res.write('500 Internal server error\n');
+		res.write('500 Internal server error\n'+filename+' is not a file.\n');
 		res.end();
 	}
 
@@ -389,5 +362,13 @@ function overrideWithStaticOutput(res, found, data, post){
  *	Exports
  */
 module.exports.start = HyperProxy;
-module.exports.overrideJSandCSSgeneric = overrideJSandCSSgeneric;
-module.exports.overrideWithStaticOutput = overrideWithStaticOutput;
+module.exports.overrideJSandCSSgeneric = function(res, found, data, post){
+	console.warn('overrideJSandCSSgeneric function name is deprecated. Please use overrideWithFilesFromPath instead.');
+	return overrideWithFilesFromPath(res, found, data, post);
+};
+module.exports.overrideWithStaticOutput = function(res, found, data, post){
+	console.warn('overrideWithStaticOutput function name is deprecated. Please use overrideWithSpecifiedFile instead.');
+	return overrideWithSpecifiedFile(res, found, data, post);
+};
+module.exports.overrideWithFilesFromPath = overrideWithFilesFromPath;
+module.exports.overrideWithSpecifiedFile = overrideWithSpecifiedFile;
