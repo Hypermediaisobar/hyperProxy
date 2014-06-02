@@ -248,8 +248,9 @@ describe('FilteredProxy', function(){
 					});
 					response.write(hijackText);
 
-					return function(data) {
+					return function(error, data) {
 						response.end();
+						assert.strictEqual(error ? true : false, false, error);
 						assert.strictEqual(data.toString('utf8'), requestData, 'Data from POST did not match');
 						done();
 					};
@@ -331,7 +332,8 @@ describe('FilteredProxy', function(){
 			});
 
 			http.get('http://'+self.options.hostname + ':' + self.options.port + pathname, function(response){
-				self.proxy.drainMessage(response, function(buffer){
+				self.proxy.drainMessage(response, function(error, buffer){
+					assert.strictEqual(error ? true : false, false, error);
 					assert.strictEqual(buffer.toString('utf8'), hijackText, 'Content was hijacked');
 					done();
 				});

@@ -10,11 +10,11 @@ A node.js (http://nodejs.org/) local proxy to help front-end developers use loca
 
 From time to time there is a need for a front-end developer to debug an application on the production server. Usually there is no direct access to the files on the server, nor it would be good to edit them there (making end-users struggle with our mistakes and lets-see-what-that-will-do experiments).
 Other times there is a project which requires a lot of backend software to run, just to edit and test a single, simple CSS or JS file.
-In both cases front-end developer could use a tool that allows working with local files as they were on the production website.
+In both cases front-end developer could use a tool that allows working with local files as if they were on the production website.
 
 While there are great plugins available for various browsers and editors, which allow for dynamic modfication of JavaScript and CSS, they all are browser specific. Usually they work only on one or two of the main three browsers.
 That is why a local proxy may be a better solution. It allows to override only specific files with local copies, and can work for all the web browsers (or any other applications) at the same time.
-One such proxy is an application called Fiddler, which can be really helpful when debugging websites.
+One such proxy is an application called Fiddler, which can be really helpful for debugging websites.
 
 Node.js is easy to install on all major platforms and scripts are written in JavaScript, so they should be easy to write by any front-end developer, once they know some basic nodejs functions.
 If we create a base or a library that implements most of the stuff and there will be only a simple configuration needed for a developer to start overriding URLs, then there will be almost nothing new to learn to start working. And there still will be an easy way to implement additional functionality, all in JavaScript.
@@ -87,7 +87,7 @@ var overrides = {
 		// Regexp matching URLs that should be overriden.
 		'match': new RegExp(/\/(jquery-1.11.0\.min\.(js))$/i),
 		// Callback function that will be called fo overriden URLs.
-		'callback': hyperProxy.overrideJSandCSSgeneric,
+		'callback': hyperProxy.overrideWithFilesFromPath,
 		// Additional data. Path is needed for default hyperProxy helper functions.
 		'path': './js/',
 		// Tell it to try non-minified versions of JS and CSS first
@@ -131,20 +131,48 @@ It will restart the proxy automatically whenever you change your proxy/configura
 
 ## Helper functions
 
-hyperProxy exports two helper functions: overrideJSandCSSgeneric and overrideWithStaticOutput.
-
+hyperProxy exports two helper functions: overrideWithFilesFromPath and overrideWithSpecifiedFile. Those functions try to serve files with correct mime type. By default they support:
 
 ```javascript
-hyperProxy.overrideJSandCSSgeneric(response, found, data, post)
+	'js'  : 'application/javascript',
+	'css' : 'text/css',
+	'htm' : 'text/html',
+	'html': 'text/html',
+	'swf' : 'application/x-shockwave-flash',
+	'xml' : 'application/xml',
+	'xslt': 'application/xslt+xml',
+	'png' : 'image/png',
+	'gif' : 'image/gif',
+	'jpg' : 'image/jpeg',
+	'jpeg': 'image/jpeg',
+	'webp': 'image/webp',
+	'svg' : 'image/svg+xml',
+	'svgz': 'image/svg+xml',
+	'woff': 'application/font-woff',
+	'ttf' : 'application/font-sfnt',
+	'otf' : 'application/font-sfnt',
+	'eot' : 'application/vnd.ms-fontobject'
 ```
 
-In projects that use separate CSS and JS files there's not much additional work needed.
-This function tries to find JS, CSS, HTM(L) or SWF file. If `data` has `tryNonMinimizedFiles` property set to true,
-then this function will automatically try to serve non-minified (without the ".min" part) versions of the files.
+If you need to have support for more MIME types, you can install `mime` module (https://github.com/broofa/node-mime):
+
+```javascript
+npm install mime
+```
+
+Below is a short description of what the helper functions do. For more information look into the example and/or the source code.
 
 
 ```javascript
-hyperProxy.overrideWithStaticOutput(response, found, data, post)
+hyperProxy.overrideWithFilesFromPath(response, found, data, post)
+```
+
+In projects that use separate CSS and JS files it is easy to override them with this function. It tries to serve JS, CSS, HTM(L), SWF, image and font files with correct MIME type.
+If `data` has `tryNonMinimizedFiles` property set to true, then this function will automatically try to serve non-minified (without the ".min" part) versions of the files.
+
+
+```javascript
+hyperProxy.overrideWithSpecifiedFile(response, found, data, post)
 ```
 
 This function simply overrides requested file with the one specified in the `data['path']` parameter (data is an object from the overrides object).
