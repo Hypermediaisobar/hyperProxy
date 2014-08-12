@@ -8,6 +8,7 @@
 
 var assert = require('assert');
 var path = require('path');
+var url = require('url');
 
 describe('NTLM', function(){
 	'use strict';
@@ -460,17 +461,19 @@ describe('NTLM', function(){
 			assert.strictEqual(ntlm.master_session_key(credentials).toString('hex'), correct, 'Wrong when using Lan Manager sesion key');
 		});
 
-
-
 		it('should work on real server data', function(done){
 			// FIXME: ENTER YOUR REAL CREDENTIALS HERE
 			var user = '';
 			var domain = '';
 			var password = '';
 
+			var targetUrl = url.parse('http://nodejs.org/');
+
 			assert.ok(user, 'Real user name is required for this test');
 			assert.ok(domain, 'Real domain name is required for this test');
 			assert.ok(password, 'Real user password is required for this test');
+
+			this.timeout(3000);
 
 			var credentials = new ntlm.credentials(user, domain, password);
 
@@ -483,7 +486,7 @@ describe('NTLM', function(){
 			var net = require('net');
 			var client = net.connect({host: 'proxy.hyper', port: 3128}, function(){
 				stage = 1;
-				client.write("HEAD http://jquery.com/ HTTP/1.1\r\nHost: jquery.com\r\nConnection: keep-alive\r\nProxy-Authorization: NTLM "+message1.toString('base64')+"\r\n\r\n");
+				client.write("HEAD "+targetUrl.href+" HTTP/1.1\r\nHost: "+targetUrl.host+"\r\nConnection: keep-alive\r\nProxy-Authorization: NTLM "+message1.toString('base64')+"\r\n\r\n");
 			});
 			client.on('data', function(data){
 				if (stage === 1) {
@@ -505,7 +508,7 @@ describe('NTLM', function(){
 					stage = 2;
 					headers = '';
 
-					client.write("GET http://jquery.com/ HTTP/1.1\r\nHost: jquery.com\r\nConnection: keep-alive\r\nProxy-Authorization: NTLM "+message3.toString('base64')+"\r\n\r\n");
+					client.write("GET "+targetUrl.href+" HTTP/1.1\r\nHost: "+targetUrl.host+"\r\nConnection: close\r\nProxy-Authorization: NTLM "+message3.toString('base64')+"\r\n\r\n");
 				}
 				else if (stage === 2) {
 					headers += data.toString();
@@ -515,6 +518,8 @@ describe('NTLM', function(){
 
 					var code = headers.match(/HTTP\/1\.\d\s+(\d+)/);
 					assert.ok(code[1] != 407, 'Looks like NTLM authentication failed.');
+
+					client.end();
 				}
 				else {
 					assert('Unknown stage: '+stage);
