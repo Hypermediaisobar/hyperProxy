@@ -55,25 +55,43 @@ Settings may look like this:
 var settings = {
 	// This port can actually be used for both HTTP and HTTPS.
 	'httpPort': 8000,
-	// This is required for a setup, but there will be no need to access it directly.
-	'httpsPort': 8001,
-	// Set pacPort to false if PAC file server should not be created.
-	// Without separate PAC file server, hyperProxy will serve `http://localhost:[httpPort]/proxy.pac` file instead.
-	'pacPort': 8002,
+
+	// Without separate PAC file server, hyperProxy will serve `http://localhost:[httpPort]/proxy.pac` file.
+	// You can set pacPort to specific port number to make hyperProxy serve PAC file on that port.
+	// 'pacPort': 8002,
+
+	// You may want to provide your own root key and certificates, especially if you have pem module installed
+	// and useSNI is enabled (it is by default) to generate cetificates per-domain.
+	// If you do not set custom key and cert, hyperProxy will try to autogenerate both files
+	// in current working directory (the one, from which you are starting your hyperProxy). But that will work only
+	// if you have OpenSSL installed on your system.
+	//
+	// To generate own root key and certificate you may use following command line:
+	// openssl req -nodes -x509 -newkey rsa:2048 -keyout hyperProxy/lib/certs/server.key -out hyperProxy/lib/certs/server.crt -days 365 -subj '/O=hyperProxy/CN=hyperProxy SSL CA'
+	//
+	// WARNING: You can add certificate to your browsers, so they will stop bugging you about security risk, but be sure to
+	// either set -days to 1, or add certificate on user account that is NEVER used for accessing important sites like bank or
+	// any site that has your credit card information stored.
+	//'key': fs.readFileSync('my_server.key', 'utf8'),
+	//'cert': fs.readFileSync('my_server.crt', 'utf8'),
+
 	// Verbosity can be false, true or "debug" for all the stuff possible to be printed in the console.
 	'verbose': false,
-	// Standard key and certificate for handling HTTPS
-	'key': './certs/server.key',
-	'cert': './certs/server.crt',
+
 	// Not needed, unless you need to use corporate proxy with NTLM login,
 	// in which case you can install http://cntlm.sourceforge.net/
 	// and configure it here. Look into hyperProxy.js for more information.
 	// This is buggy, and may not work for you.
 	'cntlm': false,
+
 	// If you want browser to fallback to default proxy of your choice
 	// (for URLs that you do not want to override)
 	// you can setup it here. Look into hyperProxy.js for more information.
-	'proxy': false
+	'proxy': false,
+
+	// If you do not want to generate certificate per each HTTPS domain and you have pem module
+	// installed, set useSNI option to false.
+	// useSNI: false
 };
 ```
 
@@ -212,9 +230,7 @@ jsdoc hyperProxy.js lib/*.js README.md -d documentation -c jsdoc.json
 ## TODO
 
 1. Fix known problems ;)
-2. Add a way to dynamically generate certificates for overriden URLs. Use one signing "root" certificate, which can later be added
-   to the system/browser to prevent warnings about "unofficial" certificates.
-3. Create something similar to http://thechangelog.com/frak-takes-an-entirely-different-approach-to-generating-regular-expressions/
+2. Create something similar to http://thechangelog.com/frak-takes-an-entirely-different-approach-to-generating-regular-expressions/
    to make creation of overrides even simpler for people who do not like regular expressions.
 
 
