@@ -383,7 +383,7 @@ describe('Proxy', function(){
 						ssocket.end();
 
 						var cert = ssocket.getPeerCertificate();
-						assert.strictEqual(cert.subject.O, 'hyperProxy');
+						assert.strictEqual(cert.subject.O, 'hyperProxy target');
 						assert.strictEqual(cert.subject.CN, 'example.com');
 
 						done();
@@ -412,7 +412,7 @@ describe('Proxy', function(){
 						'Connection: close\r\n' +
 						'\r\n');
 					var cert = ssocket.getPeerCertificate();
-					assert.strictEqual(cert.subject.O, 'hyperProxy');
+					assert.strictEqual(cert.subject.O, 'hyperProxy target');
 					assert.strictEqual(cert.subject.CN, 'example.com');
 				});
 				ssocket.on('data', function(data){});
@@ -427,7 +427,7 @@ describe('Proxy', function(){
 				res.on('data', function(data){});
 				res.on('end', function(){
 					var cert = res.connection.getPeerCertificate();
-					assert.strictEqual(cert.subject.O, 'hyperProxy');
+					assert.strictEqual(cert.subject.O, 'hyperProxy target');
 					assert.strictEqual(cert.subject.CN, 'example.com');
 					done();
 				});

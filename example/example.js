@@ -37,12 +37,10 @@ var overrides = {
 */
 var settings = {
 	'httpPort': 8000,
-	'httpsPort': 8001,
+	//'httpsPort': 8001,// optional
 	// Set pacPort to false if PAC file server should not be started.
 	// Without separate PAC file server, hyperProxy will serve `http://localhost:[httpPort]/proxy.pac` file instead.
 	'pacPort': false,//8002,
-	'key': fs.readFileSync(path.join(path.dirname(module.filename), 'certs', 'server.key'), 'utf8'),
-	'cert': fs.readFileSync(path.join(path.dirname(module.filename), 'certs', 'server.crt'), 'utf8'),
 
 	// Default proxy location is used in the PAC file output.
 	// Set proxy to false to not use any default proxy in the PAC file output
