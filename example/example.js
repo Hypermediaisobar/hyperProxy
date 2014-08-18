@@ -140,12 +140,14 @@ function ignoreGoogleAnalytics(res, found, data, post){
  *	but it also can contain dot-separated names of subdirectories, e.g., en_GB.print.
  *	All that for the directory structure like this:
  *
- *	files
- *	files/en_GB
- *	files/fr_FR
- *	files/en_GB/js.txt
- *	files/en_GB/css.txt
- *	files/en_GB/print/css.txt
+ *	source
+ *	source/en_GB
+ *	source/fr_FR
+ *	source/en_GB/js.txt
+ *	source/en_GB/css.txt
+ *	source/en_GB/print/css.txt
+ *
+ *	Always returns true, to let hyperProxy know, that response was handled, and should not be proxied or handled any other way.
  *
  *	@res - HTTP response.
  *	@found - result of RegExp exec().
@@ -155,23 +157,41 @@ function ignoreGoogleAnalytics(res, found, data, post){
 function overrideJSandCSSonCQ(res, found, data, post){
 	'use strict';
 
-	var dir = path.join(data.path, found[1].replace('.', path.sep));
-	var ls = fs.readFileSync(path.join(dir, found[2] + '.txt'), 'utf8');
-	var lines = ls.match(/[^\r\n]+/g);
+	var dir = path.join(data['path'], found[1].replace('.', path.sep));
+
+	var isJS = (found[2] === 'js' ? true : false);
+	var dataPostfix = (isJS ? ';' : '') + "\n";
 	var output = '';
 
-	lines.forEach(function(p){
-		if (p.match(/\s*#/)) return; // Omit comments
-		output += "\n\n/"+"*-----------------------\n" + p + "\n-----------------------*"+"/\n\n" + fs.readFileSync(path.join(dir, p), 'utf8') + (found[3] === 'js' ? ';' : '') + "\n";
-	});
+	fs.readFile(path.join(dir, found[2] + '.txt'), {encoding: 'utf8'}, function(err, data){
+		var files = (err ? [] : data.match(/[^\r\n]+/g));
+		var fileReadNext;
 
-	//res.useChunkedEncodingByDefault = false;
-	res.writeHead(200, {
-			'Content-Type': (found[2] === 'js' ? 'application/x-javascript' : 'text/css'),
-			'Content-Length': Buffer.byteLength(output, 'utf8')
+		fileReadNext = function() {
+			if (files.length < 1) {
+				res.writeHead(200, {
+						'Content-Type': (isJS ? 'application/x-javascript' : 'text/css'),
+						'Content-Length': Buffer.byteLength(output, 'utf8')
+				});
+				res.write.call(res, output);
+				res.end();
+				return;
+			}
+
+			var filePath = files.shift();
+			if (filePath.match(/\s*#/)) {
+				fileReadNext();
+				return; // Omit comments
+			}
+
+			fs.readFile(path.join(dir, filePath), {encoding: 'utf8'}, function(err, data){
+				output += "\n\n/"+"*-----------------------\n" + filePath + "\n-----------------------*"+"/\n\n" + (err ? '/* ERROR: '+err+'*/' : data) + dataPostfix;
+				fileReadNext();
+			});
+		};
+
+		fileReadNext();
 	});
-	res.write.call(res, output);
-	res.end();
 
 	return true;
 }
