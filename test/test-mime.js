@@ -25,13 +25,13 @@ describe('MIME', function(){
 
 	describe('results', function(){
 		it('should return correct HTML type', function(){
-			assert.strictEqual(mime('/non/existant/path/to/example.html'), 'text/html');
+			assert.strictEqual(mime('/non/existant/path/to/example.html'), 'text/html; charset=UTF-8');
 		});
 		it('should return correct CSS type', function(){
-			assert.strictEqual(mime('/non/existant/path/to/example.css'), 'text/css');
+			assert.strictEqual(mime('/non/existant/path/to/example.css'), 'text/css; charset=UTF-8');
 		});
 		it('should return correct JS type', function(){
-			assert.strictEqual(mime('/non/existant/path/to/example.js'), 'application/javascript');
+			assert.strictEqual(mime('/non/existant/path/to/example.js'), 'application/javascript; charset=UTF-8');
 		});
 		it('should return correct SWF type', function(){
 			assert.strictEqual(mime('/non/existant/path/to/example.swf'), 'application/x-shockwave-flash');

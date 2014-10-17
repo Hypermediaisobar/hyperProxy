@@ -45,21 +45,26 @@ var settings = {
 	// Default proxy location is used in the PAC file output.
 	// Set proxy to false to not use any default proxy in the PAC file output
 	// (PAC will return DIRECT connection value in that case).
-	'proxy': false
+	'proxy': false,
 	/*
 	// Or:
 	proxy: {
 		'hostname': 'company.proxy',
 		'port': 8888
-	}
+	},
 	*/
 	/*
 	// Or:
 	proxy: {
 		'hostname': '127.0.0.1',
 		'port': 8080
-	}
+	},
 	*/
+	// When using helper functions it's good to specify documentRoot and followSymbolicLinks options,
+	// to prevent access to files that should not be accessed (like system files).
+	// Currently, for backward compatibility, defaults are quite unsecure, so it's better to change them like this:
+	'documentRoot': process.cwd(),
+	'followSymbolicLinks': false
 };
 
 

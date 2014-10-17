@@ -78,12 +78,6 @@ var settings = {
 	// Verbosity can be false, true or "debug" for all the stuff possible to be printed in the console.
 	'verbose': false,
 
-	// Not needed, unless you need to use corporate proxy with NTLM login,
-	// in which case you can install http://cntlm.sourceforge.net/
-	// and configure it here. Look into hyperProxy.js for more information.
-	// This is buggy, and may not work for you.
-	'cntlm': false,
-
 	// If you want browser to fallback to default proxy of your choice
 	// (for URLs that you do not want to override)
 	// you can setup it here. Look into hyperProxy.js for more information.
@@ -92,6 +86,12 @@ var settings = {
 	// If you do not want to generate certificate per each HTTPS domain and you have pem module
 	// installed, set useSNI option to false.
 	// useSNI: false
+
+	// When using helper functions it's good to specify documentRoot and followSymbolicLinks options,
+	// to prevent access to files that should not be accessed (like system files).
+	// Currently, for backward compatibility, defaults are quite unsecure, so it's better to change them like this:
+	'documentRoot': process.cwd(),
+	'followSymbolicLinks': false
 };
 ```
 
@@ -124,7 +124,7 @@ var hyperProxy = require('../hyperProxy.js');
 new hyperProxy.start(overrides, settings);
 ```
 
-For more explanations look into the example.js code and hyperProxy.js code.
+For more explanations look into the example.js and hyperProxy.js code.
 
 After setting up a file, just run it using node.js in the directory of your hyperProxy file, for example:
 
@@ -152,10 +152,11 @@ It will restart the proxy automatically whenever you change your proxy/configura
 hyperProxy exports two helper functions: overrideWithFilesFromPath and overrideWithSpecifiedFile. Those functions try to serve files with correct mime type. By default they support:
 
 ```javascript
-	'js'  : 'application/javascript',
-	'css' : 'text/css',
-	'htm' : 'text/html',
-	'html': 'text/html',
+	'js'  : 'application/javascript; charset=UTF-8',
+	'json': 'application/json; charset=UTF-8',
+	'css' : 'text/css; charset=UTF-8',
+	'htm' : 'text/html; charset=UTF-8',
+	'html': 'text/html; charset=UTF-8',
 	'swf' : 'application/x-shockwave-flash',
 	'xml' : 'application/xml',
 	'xslt': 'application/xslt+xml',
@@ -169,7 +170,13 @@ hyperProxy exports two helper functions: overrideWithFilesFromPath and overrideW
 	'woff': 'application/font-woff',
 	'ttf' : 'application/font-sfnt',
 	'otf' : 'application/font-sfnt',
-	'eot' : 'application/vnd.ms-fontobject'
+	'eot' : 'application/vnd.ms-fontobject',
+	'mp4' : 'video/mp4',
+	'mov' : 'video/quicktime',
+	'3gp' : 'video/3gpp',
+	'avi' : 'video/x-msvideo',
+	'wmv' : 'video/x-ms-wmv',
+	'ogv' : 'video/ogg'
 ```
 
 If you need to have support for more MIME types, you can install `mime` module (https://github.com/broofa/node-mime):
@@ -177,6 +184,18 @@ If you need to have support for more MIME types, you can install `mime` module (
 ```javascript
 npm install mime
 ```
+
+Helper functions serve files using internal function which handles also file streaming. It is possible to override that function with another one by calling:
+
+```javascript
+hyperProxy.initHelperFunctions({serveFile: function(response, filePath, requestHeaders){
+	// serve file here
+}});
+```
+
+Please keep in mind, that function is "global" for all instances of hyperProxy created in a single process.
+For more information look into hyperProxy.js and lib/ServeFile.js code.
+
 
 Below is a short description of what the helper functions do. For more information look into the example and/or the source code.
 
