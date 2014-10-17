@@ -324,7 +324,7 @@ function initHelperFunctions(options) {
  *
  *  @param {Object} res - HTTP response.
  *  @param {Object} found - result of RegExp exec(). found[1] will be used as a file path and name relative to the @data['path'].
- *  @param {Object} data - matched override object with any custom data that was put there, including required 'path' to the project directory.
+ *  @param {Object} data - matched override object with any custom data that was put there, including required 'path' to the project directory.  With additional, temporary 'headers' property from HTTP(S) request.
  *  @param {Object} post - parsed query from the POST data, e.g., "variable=value" will be passed as "{ variable: value }". Not used.
  *  @returns {boolean}
  */
@@ -354,7 +354,7 @@ function overrideWithFilesFromPath(res, found, data, post){
  *
  *  @param {Object} res - HTTP response.
  *  @param {Object} found - result of RegExp exec(). Not used.
- *  @param {Object} data - matched override object with any custom data that was put there, including required 'path' to the target file.
+ *  @param {Object} data - matched override object with any custom data that was put there, including required 'path' to the target file. With additional, temporary 'headers' property from HTTP(S) request.
  *  @param {Object} post - parsed query from the POST data, e.g., "variable=value" will be passed as "{ variable: value }". Not used.
  *  @returns {boolean}
  */
