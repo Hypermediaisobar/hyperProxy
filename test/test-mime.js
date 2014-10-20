@@ -64,7 +64,7 @@ describe('MIME', function(){
 		});
 		it('should return correct TTF and OTF types', function(){
 			var type = mime('/non/existant/path/to/example.otf');
-			assert.strictEqual(type === 'application/font-sfnt' || type === 'application/x-font-otf', true, 'Type should be either application/font-sfnt or application/x-font-otf');
+			assert.strictEqual(type === 'application/font-sfnt' || type === 'application/x-font-otf', true, 'Type should be either application/font-sfnt or application/x-font-otf, not '+type+'. See: http://stackoverflow.com/a/4657091 and http://www.iana.org/assignments/media-types/application/font-sfnt.');
 			type = mime('/non/existant/path/to/example.ttf');
 			assert.strictEqual(type === 'application/font-sfnt' || type === 'application/x-font-ttf', true, 'Type should be either application/font-sfnt or application/x-font-ttf');
 		});
