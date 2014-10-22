@@ -285,9 +285,9 @@ util.inherits(HyperProxy, FilteredProxy);
  * @private
  */
 var defaultServeFile = function defaultServeFile(res, filePath, reqHeaders){
-	console.warn('hyperProxy.serveFile was not initialized with options passed to `start()` or by setting `hyperProxy.serveFile = hyperProxy.createFileResponseHandler()` before. Initializing now with default root directory set to "/" and followSymbolicLinks set to true.');
+	console.warn('hyperProxy.serveFile was not initialized with options passed to `start()` or by setting `hyperProxy.serveFile = hyperProxy.createFileResponseHandler()` before. Initializing now with default root directory set to '+process.cwd()+' and followSymbolicLinks set to true.');
 	serveFile = createFileResponseHandler({
-		documentRoot: '/',
+		documentRoot: process.cwd(),
 		followSymbolicLinks: true
 	});
 	return serveFile(res, filePath, reqHeaders);
