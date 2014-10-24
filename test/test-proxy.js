@@ -63,12 +63,21 @@ describe('Proxy', function(){
 			self.content = "HELLO WORLD!\n";
 			self.server = false;
 			self.server = http.createServer(function(request, response){
-				response.writeHead(200, {
-					'Content-Type': 'text/plain',
-					'Content-Length': self.content.length
+				var data = '';
+
+				request.setEncoding('utf8');
+				request.on('data', function(chunk){
+					data += chunk;
 				});
-				response.write(self.content);
-				response.end();
+				request.on('end', function(){
+					response.writeHead(200, {
+						'Content-Type': 'text/plain',
+						'Content-Length': self.content.length + data.length
+					});
+					response.write(self.content);
+					response.write(data);
+					response.end();
+				});
 			});
 			self.server.listen(self.options.testServerPort, self.options.host, 511, function(){
 				init();
@@ -82,7 +91,7 @@ describe('Proxy', function(){
 			self.proxy.stop(cleanup);
 		});
 
-		it('should get correct answer from server', function(done){
+		it('should get correct GET answer from server', function(done){
 			this.timeout(2000);
 			self.target = {
 				hostname: self.options.host,
@@ -90,9 +99,10 @@ describe('Proxy', function(){
 				path: '/hello',
 				headers: {
 					'Host': self.options.host+':'+self.options.testServerPort,
-					'Content-Type': 'text/plain; charset=utf8'
+					'Content-Type': 'text/plain; charset=UTF-8'
 				},
-				agent: false
+				agent: false,
+				method: 'GET'
 			};
 			var request = http.request(self.target, function(response){
 				var downloaded = '';
@@ -106,6 +116,33 @@ describe('Proxy', function(){
 			});
 			request.end();
 		});
+
+		it('should get correct POST answer from server', function(done){
+			this.timeout(2000);
+			self.target = {
+				hostname: self.options.host,
+				port: self.options.httpPort,
+				path: '/echo',
+				headers: {
+					'Host': self.options.host+':'+self.options.testServerPort,
+					'Content-Type': 'text/plain; charset=UTF-8'
+				},
+				agent: false,
+				method: 'POST'
+			};
+			var request = http.request(self.target, function(response){
+				var downloaded = '';
+				response.on('data', function(data){
+					downloaded += data;
+				});
+				response.on('end', function(){
+					assert.strictEqual(downloaded, self.content + self.content);
+					done();
+				});
+			});
+			request.write(self.content);
+			request.end();
+		});
 	});
 
 	describe('HTTPS', function(){
@@ -116,12 +153,21 @@ describe('Proxy', function(){
 			self.content = "HELLO WORLD!\n";
 			self.server = false;
 			self.server = https.createServer(self.options, function(request, response){
-				response.writeHead(200, {
-					'Content-Type': 'text/plain',
-					'Content-Length': self.content.length
+				var data = '';
+
+				request.setEncoding('utf8');
+				request.on('data', function(chunk){
+					data += chunk;
 				});
-				response.write(self.content);
-				response.end();
+				request.on('end', function(){
+					response.writeHead(200, {
+						'Content-Type': 'text/plain',
+						'Content-Length': self.content.length + data.length
+					});
+					response.write(self.content);
+					response.write(data);
+					response.end();
+				});
 			});
 			self.server.listen(self.options.testServerPort, self.options.host, 511, init);
 		});
@@ -133,7 +179,7 @@ describe('Proxy', function(){
 			self.proxy.stop(cleanup);
 		});
 
-		it('should get correct answer from server through HTTPS proxy', function(done){
+		it('should get correct GET answer from server through HTTPS proxy', function(done){
 			this.timeout(2000);
 
 			self.target = {
@@ -142,9 +188,10 @@ describe('Proxy', function(){
 				path: '/hello',
 				headers: {
 					'Host': self.options.host+':'+self.options.testServerPort,
-					'Content-Type': 'text/plain; charset=utf8'
+					'Content-Type': 'text/plain; charset=UTF-8'
 				},
-				agent: false
+				agent: false,
+				method: 'GET'
 			};
 			var request = https.request(self.target, function(response){
 				var downloaded = '';
@@ -156,6 +203,34 @@ describe('Proxy', function(){
 					done();
 				});
 			});
+			request.end();
+		});
+
+		it('should get correct POST answer from server through HTTPS proxy', function(done){
+			this.timeout(2000);
+
+			self.target = {
+				hostname: self.options.host,
+				port: self.options.httpsPort,
+				path: '/echo',
+				headers: {
+					'Host': self.options.host+':'+self.options.testServerPort,
+					'Content-Type': 'text/plain; charset=UTF-8'
+				},
+				agent: false,
+				method: 'POST'
+			};
+			var request = https.request(self.target, function(response){
+				var downloaded = '';
+				response.on('data', function(data){
+					downloaded += data;
+				});
+				response.on('end', function(){
+					assert.strictEqual(downloaded, self.content + self.content);
+					done();
+				});
+			});
+			request.write(self.content);
 			request.end();
 		});
 
@@ -176,7 +251,7 @@ describe('Proxy', function(){
 					path: '/hello',
 					headers: {
 						'Host': self.options.host+':'+self.options.testServerPort,
-						'Content-Type': 'text/plain; charset=utf8'
+						'Content-Type': 'text/plain; charset=UTF-8'
 					},
 					agent: false
 				};
@@ -245,7 +320,7 @@ describe('Proxy', function(){
 				path: 'http://' + self.options.host + ':' + self.options.testServerPort + '/hello',
 				headers: {
 					'Host': self.options.host+':'+self.options.testServerPort,
-					'Content-Type': 'text/plain; charset=utf8'
+					'Content-Type': 'text/plain; charset=UTF-8'
 				},
 				agent: false
 			};
@@ -319,7 +394,7 @@ describe('Proxy', function(){
 					path: '/hello',
 					headers: {
 						'Host': self.options.host+':'+self.options.testServerPort,
-						'Content-Type': 'text/plain; charset=utf8'
+						'Content-Type': 'text/plain; charset=UTF-8'
 					},
 					agent: false
 				};
