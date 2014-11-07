@@ -276,6 +276,29 @@ describe('NTLM', function(){
 			assert.strictEqual(message2.targetInfo.dnsDomainName.toString('ucs2'), 'domain.com', 'Wrong server name');
 		});
 
+		it('should create valid Type2 message', function(){
+			var correct = ntlm.readType2Message(new Buffer(inputMessage2, 'hex'));
+
+			var message2 = ntlm.readType2Message(ntlm.createType2Message(correct.targetName.toString('ucs2'), correct.flags, correct.challenge, correct.context, correct.targetInfo, correct.version));
+
+			// Target Info data order may differ, so check "meta" bytes first
+			assert.strictEqual(message2._raw.toString('hex').substring(0, 80), inputMessage2.substring(0, 80));
+
+			// Now check Target info
+			assert.strictEqual(message2.targetInfo.domainName.toString('hex'), correct.targetInfo.domainName.toString('hex'), 'domainName differ');
+			assert.strictEqual(message2.targetInfo.computerName.toString('hex'), correct.targetInfo.computerName.toString('hex'), 'computerName differ');
+			assert.strictEqual(message2.targetInfo.dnsDomainName.toString('hex'), correct.targetInfo.dnsDomainName.toString('hex'), 'dnsDomainName differ');
+			assert.strictEqual(message2.targetInfo.dnsComputerName.toString('hex'), correct.targetInfo.dnsComputerName.toString('hex'), 'dnsComputerName differ');
+
+			// Last, check OSVersion (if there is any)
+			if (correct.version) {
+				assert.strictEqual(message2.version.major.toString('hex'), correct.version.major.toString('hex'), 'OSVersion major differ');
+				assert.strictEqual(message2.version.minor.toString('hex'), correct.version.minor.toString('hex'), 'OSVersion minor differ');
+				assert.strictEqual(message2.version.build.toString('hex'), correct.version.build.toString('hex'), 'OSVersion build differ');
+				assert.strictEqual(message2.version.reserved.toString('hex'), correct.version.reserved.toString('hex'), 'OSVersion reserved differ');
+			}
+		});
+
 		it('should create correct LM response', function(){
 			var response = ntlm.lm_response(message2, credentials);
 
