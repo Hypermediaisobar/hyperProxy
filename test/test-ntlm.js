@@ -611,16 +611,18 @@ describe('NTLM', function(){
 
 	describe('HTTP Proxy Authentication with real NTLM server', function(){
 		it('should work', function(done){
-			// FIXME: ENTER YOUR REAL CREDENTIALS HERE
-			var user = '';
-			var domain = '';
-			var password = '';
+			// ENTER YOUR REAL CREDENTIALS AND PROXY SERVER ADDRESS HERE
+			var user = process.env.NTLM_USER || '';
+			var domain = process.env.NTLM_DOMAIN || '';
+			var password = process.env.NTLM_PASS || '';
+			var proxy = (process.env.NTLM_PROXY || '').split(':');
 
 			var targetUrl = url.parse('http://nodejs.org/');
 
-			assert.ok(user, 'Real user name is required for this test');
-			assert.ok(domain, 'Real domain name is required for this test');
-			assert.ok(password, 'Real user password is required for this test');
+			assert.ok(user, 'Real user name is required for this test. Set environment variable NTLM_USER or enter it directly into test file.');
+			assert.ok(domain, 'Real domain name is required for this test. Set environment variable NTLM_DOMAIN or enter it directly into test file.');
+			assert.ok(password, 'Real user password is required for this test. Set environment variable NTLM_PASS or enter it directly into test file.');
+			assert.ok(proxy[0], 'Real proxy server is required for this test. Set environment variable NTLM_PROXY or enter it directly into test file.');
 
 			this.timeout(3000);
 
@@ -633,7 +635,7 @@ describe('NTLM', function(){
 			var stage = 1;
 
 			var net = require('net');
-			var client = net.connect({host: 'proxy.hyper', port: 3128}, function(){
+			var client = net.connect({host: proxy[0], port: proxy[1] || 3128}, function(){
 				stage = 1;
 				client.write("HEAD "+targetUrl.href+" HTTP/1.1\r\nHost: "+targetUrl.host+"\r\nConnection: keep-alive\r\nProxy-Authorization: NTLM "+message1.toString('base64')+"\r\n\r\n");
 			});
