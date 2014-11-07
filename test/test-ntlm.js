@@ -483,8 +483,134 @@ describe('NTLM', function(){
 			correct = '70e61dc3a3eb655aadf96d22e97b5fa1';
 			assert.strictEqual(ntlm.master_session_key(credentials).toString('hex'), correct, 'Wrong when using Lan Manager sesion key');
 		});
+	});
 
-		it('should work on real server data', function(done){
+	describe('HTTP Proxy Authentication with fake NTLM server', function(){
+		var serverPort = 8085;
+		var proxyPort = 8086;
+		var text = 'YES';
+
+		var http = require('http');
+		var server = null;
+		var proxy = null;
+
+		var credentials;
+
+		before(function(done){
+			credentials = new ntlm.credentials(USER, DOMAIN, PASSWORD);
+
+			var ready = (function(todo, callback){
+				var readyCount = 0;
+				return function(){
+					readyCount++;
+					if (todo == readyCount) {
+						callback();
+					}
+				};
+			})(2, done);
+
+			server = http.createServer(function(req, res){
+				res.writeHead(200, {
+					'Content-Type': 'text/plain;charset=UTF8',
+					'Content-Length': text.length,
+					'Date': (new Date()).toUTCString(),
+					'Connection': 'close'
+				});
+				res.end(text);
+			});
+			server.on('listening', function(){
+				serverPort = this.address().port;
+				ready();
+			});
+			server.listen(serverPort, '127.0.0.1');
+
+			var NTLMProxy = require(path.join(path.dirname(module.filename), 'support', 'NTLMProxy.js'));
+			proxy = NTLMProxy(function(username, domain, workstation){
+				return credentials;
+			});
+			proxy.on('listening', function(){
+				proxyPort = this.address().port;
+				ready();
+			});
+			proxy.listen(proxyPort, '127.0.0.1');
+		});
+
+		after(function(done){
+			var ready = (function(todo, callback){
+				var readyCount = 0;
+				return function(){
+					readyCount++;
+					if (todo == readyCount) {
+						callback();
+					}
+				};
+			})(2, done);
+
+			server.on('close', ready);
+			proxy.on('close', ready);
+
+			server.close();
+			proxy.close();
+		});
+
+		it('should work', function(done){
+			ntlm.securityLevel = 4;
+			var message1 = ntlm.createType1Message(credentials);
+
+			var onResponse = function(res){
+
+				var message2 = ntlm.readType2Message(res.headers['proxy-authenticate']);
+				assert.ok(message2, 'Could not read message2 from server');
+
+				var message3 = ntlm.createType3Message(message2, credentials);
+				var req = http.request({
+					'host': '127.0.0.1',
+					'port': proxyPort,
+					'path': 'http://127.0.0.1:' + serverPort + '/hello.txt',
+					'headers': {
+						'Proxy-Authorization': 'NTLM ' + message3.toString('base64')
+					},
+					'agent': null,
+					'createConnection': function(){
+						sock.ntlmReused = true;
+						return sock;
+					}
+				}, onResponse2).on('socket', function(socket){
+					sock = socket;
+				}).end();
+			};
+
+			var onResponse2 = function(res){
+				var data = '';
+
+				res.setEncoding('utf8');
+				res.on('data', function(chunk){
+					data += chunk;
+				});
+
+				res.on('end', function(){
+					assert.strictEqual(data, text);
+					done();
+				});
+			};
+
+			var sock = null;
+
+			var req = http.request({
+				'host': '127.0.0.1',
+				'port': proxyPort,
+				'path': 'http://127.0.0.1:' + serverPort + '/hello.txt',
+				'headers': {
+					'Proxy-Authorization': 'NTLM ' + message1.toString('base64')
+				}
+			}, onResponse).on('socket', function(socket){
+				sock = socket;
+			}).end();
+		});
+	});
+
+	describe('HTTP Proxy Authentication with real NTLM server', function(){
+		it('should work', function(done){
 			// FIXME: ENTER YOUR REAL CREDENTIALS HERE
 			var user = '';
 			var domain = '';
