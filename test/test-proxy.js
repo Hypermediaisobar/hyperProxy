@@ -510,4 +510,61 @@ describe('Proxy', function(){
 			}).end();
 		});
 	});
+
+	describe('HTTP through another proxy with authentication', function(){
+		// ENTER YOUR REAL CREDENTIALS AND PROXY SERVER ADDRESS HERE
+		var user = process.env.NTLM_USER || '';
+		var password = process.env.NTLM_PASS || '';
+		var domain = process.env.NTLM_DOMAIN || '';
+		var proxy = (process.env.NTLM_PROXY || '').split(':');
+
+		before(function(done){
+			assert.ok(user, 'Real user name is required for this test. Set environment variable NTLM_USER or enter it directly into test file.');
+			assert.ok(password, 'Real user password is required for this test. Set environment variable NTLM_PASS or enter it directly into test file.');
+			assert.ok(domain, 'Real domain name is required for this test. Set environment variable NTLM_DOMAIN or enter it directly into test file.');
+			assert.ok(proxy[0], 'Real proxy server is required for this test. Set environment variable NTLM_PROXY or enter it directly into test file.');
+
+			self.options.proxy = {
+				hostname: proxy[0],
+				port: proxy[1] || 3128
+			};
+
+			self.proxy.start(done);
+		});
+
+		after(function(done){
+			self.proxy.stop(done);
+			self.options.proxy = false;
+		});
+
+		it('should get correct answer from server', function(done){
+			this.timeout(2000);
+
+			self.target = {
+				hostname: self.options.host,
+				port: self.options.port,
+				path: 'http://nodejs.org/',
+				headers: {
+					'Host': 'nodejs.org',
+					'Proxy-Authorization': 'Basic '+((new Buffer(domain + '\\' + user + ':' + password, 'utf8')).toString('base64'))
+				},
+			};
+
+			var request = http.request(self.target, function(response){
+				assert.ok(response.statusCode === 200);
+
+				var downloaded = '';
+				response.setEncoding('utf8');
+
+				response.on('data', function(chunk){
+					downloaded += chunk;
+				});
+
+				response.on('end', function(){
+					assert.ok(downloaded.indexOf('<title>node.js</title>') !== -1);
+					done();
+				});
+			}).on('error', console.error).end();
+		});
+	});
 });
