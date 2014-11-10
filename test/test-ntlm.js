@@ -276,6 +276,29 @@ describe('NTLM', function(){
 			assert.strictEqual(message2.targetInfo.dnsDomainName.toString('ucs2'), 'domain.com', 'Wrong server name');
 		});
 
+		it('should create valid Type2 message', function(){
+			var correct = ntlm.readType2Message(new Buffer(inputMessage2, 'hex'));
+
+			var message2 = ntlm.readType2Message(ntlm.createType2Message(correct.targetName.toString('ucs2'), correct.flags, correct.challenge, correct.context, correct.targetInfo, correct.version));
+
+			// Target Info data order may differ, so check "meta" bytes first
+			assert.strictEqual(message2._raw.toString('hex').substring(0, 80), inputMessage2.substring(0, 80));
+
+			// Now check Target info
+			assert.strictEqual(message2.targetInfo.domainName.toString('hex'), correct.targetInfo.domainName.toString('hex'), 'domainName differ');
+			assert.strictEqual(message2.targetInfo.computerName.toString('hex'), correct.targetInfo.computerName.toString('hex'), 'computerName differ');
+			assert.strictEqual(message2.targetInfo.dnsDomainName.toString('hex'), correct.targetInfo.dnsDomainName.toString('hex'), 'dnsDomainName differ');
+			assert.strictEqual(message2.targetInfo.dnsComputerName.toString('hex'), correct.targetInfo.dnsComputerName.toString('hex'), 'dnsComputerName differ');
+
+			// Last, check OSVersion (if there is any)
+			if (correct.version) {
+				assert.strictEqual(message2.version.major.toString('hex'), correct.version.major.toString('hex'), 'OSVersion major differ');
+				assert.strictEqual(message2.version.minor.toString('hex'), correct.version.minor.toString('hex'), 'OSVersion minor differ');
+				assert.strictEqual(message2.version.build.toString('hex'), correct.version.build.toString('hex'), 'OSVersion build differ');
+				assert.strictEqual(message2.version.reserved.toString('hex'), correct.version.reserved.toString('hex'), 'OSVersion reserved differ');
+			}
+		});
+
 		it('should create correct LM response', function(){
 			var response = ntlm.lm_response(message2, credentials);
 
@@ -460,18 +483,146 @@ describe('NTLM', function(){
 			correct = '70e61dc3a3eb655aadf96d22e97b5fa1';
 			assert.strictEqual(ntlm.master_session_key(credentials).toString('hex'), correct, 'Wrong when using Lan Manager sesion key');
 		});
+	});
 
-		it('should work on real server data', function(done){
-			// FIXME: ENTER YOUR REAL CREDENTIALS HERE
-			var user = '';
-			var domain = '';
-			var password = '';
+	describe('HTTP Proxy Authentication with fake NTLM server', function(){
+		var serverPort = 8085;
+		var proxyPort = 8086;
+		var text = 'YES';
+
+		var http = require('http');
+		var server = null;
+		var proxy = null;
+
+		var credentials;
+
+		before(function(done){
+			credentials = new ntlm.credentials(USER, DOMAIN, PASSWORD);
+
+			var ready = (function(todo, callback){
+				var readyCount = 0;
+				return function(){
+					readyCount++;
+					if (todo == readyCount) {
+						callback();
+					}
+				};
+			})(2, done);
+
+			server = http.createServer(function(req, res){
+				res.writeHead(200, {
+					'Content-Type': 'text/plain;charset=UTF8',
+					'Content-Length': text.length,
+					'Date': (new Date()).toUTCString(),
+					'Connection': 'close'
+				});
+				res.end(text);
+			});
+			server.on('listening', function(){
+				serverPort = this.address().port;
+				ready();
+			});
+			server.listen(serverPort, '127.0.0.1');
+
+			var NTLMProxy = require(path.join(path.dirname(module.filename), 'support', 'NTLMProxy.js'));
+			proxy = NTLMProxy(function(username, domain, workstation){
+				return credentials;
+			});
+			proxy.on('listening', function(){
+				proxyPort = this.address().port;
+				ready();
+			});
+			proxy.listen(proxyPort, '127.0.0.1');
+		});
+
+		after(function(done){
+			var ready = (function(todo, callback){
+				var readyCount = 0;
+				return function(){
+					readyCount++;
+					if (todo == readyCount) {
+						callback();
+					}
+				};
+			})(2, done);
+
+			server.on('close', ready);
+			proxy.on('close', ready);
+
+			server.close();
+			proxy.close();
+		});
+
+		it('should work', function(done){
+			ntlm.securityLevel = 4;
+			var message1 = ntlm.createType1Message(credentials);
+
+			var onResponse = function(res){
+
+				var message2 = ntlm.readType2Message(res.headers['proxy-authenticate']);
+				assert.ok(message2, 'Could not read message2 from server');
+
+				var message3 = ntlm.createType3Message(message2, credentials);
+				var req = http.request({
+					'host': '127.0.0.1',
+					'port': proxyPort,
+					'path': 'http://127.0.0.1:' + serverPort + '/hello.txt',
+					'headers': {
+						'Proxy-Authorization': 'NTLM ' + message3.toString('base64')
+					},
+					'agent': null,
+					'createConnection': function(){
+						sock.ntlmReused = true;
+						return sock;
+					}
+				}, onResponse2).on('socket', function(socket){
+					sock = socket;
+				}).end();
+			};
+
+			var onResponse2 = function(res){
+				var data = '';
+
+				res.setEncoding('utf8');
+				res.on('data', function(chunk){
+					data += chunk;
+				});
+
+				res.on('end', function(){
+					assert.strictEqual(data, text);
+					done();
+				});
+			};
+
+			var sock = null;
+
+			var req = http.request({
+				'host': '127.0.0.1',
+				'port': proxyPort,
+				'path': 'http://127.0.0.1:' + serverPort + '/hello.txt',
+				'headers': {
+					'Proxy-Authorization': 'NTLM ' + message1.toString('base64')
+				}
+			}, onResponse).on('socket', function(socket){
+				sock = socket;
+			}).end();
+		});
+	});
+
+	describe('HTTP Proxy Authentication with real NTLM server', function(){
+		it('should work', function(done){
+			// ENTER YOUR REAL CREDENTIALS AND PROXY SERVER ADDRESS HERE
+			var user = process.env.NTLM_USER || '';
+			var domain = process.env.NTLM_DOMAIN || '';
+			var password = process.env.NTLM_PASS || '';
+			var proxy = (process.env.NTLM_PROXY || '').split(':');
 
 			var targetUrl = url.parse('http://nodejs.org/');
 
-			assert.ok(user, 'Real user name is required for this test');
-			assert.ok(domain, 'Real domain name is required for this test');
-			assert.ok(password, 'Real user password is required for this test');
+			assert.ok(user, 'Real user name is required for this test. Set environment variable NTLM_USER or enter it directly into test file.');
+			assert.ok(domain, 'Real domain name is required for this test. Set environment variable NTLM_DOMAIN or enter it directly into test file.');
+			assert.ok(password, 'Real user password is required for this test. Set environment variable NTLM_PASS or enter it directly into test file.');
+			assert.ok(proxy[0], 'Real proxy server is required for this test. Set environment variable NTLM_PROXY or enter it directly into test file.');
 
 			this.timeout(3000);
 
@@ -484,7 +635,7 @@ describe('NTLM', function(){
 			var stage = 1;
 
 			var net = require('net');
-			var client = net.connect({host: 'proxy.hyper', port: 3128}, function(){
+			var client = net.connect({host: proxy[0], port: proxy[1] || 3128}, function(){
 				stage = 1;
 				client.write("HEAD "+targetUrl.href+" HTTP/1.1\r\nHost: "+targetUrl.host+"\r\nConnection: keep-alive\r\nProxy-Authorization: NTLM "+message1.toString('base64')+"\r\n\r\n");
 			});
