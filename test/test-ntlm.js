@@ -610,15 +610,18 @@ describe('NTLM', function(){
 	});
 
 	describe('HTTP Proxy Authentication with real NTLM server', function(){
-		it('should work', function(done){
-			// ENTER YOUR REAL CREDENTIALS AND PROXY SERVER ADDRESS HERE
-			var user = process.env.NTLM_USER || '';
-			var domain = process.env.NTLM_DOMAIN || '';
-			var password = process.env.NTLM_PASS || '';
-			var proxy = (process.env.NTLM_PROXY || '').split(':');
+		// ENTER YOUR REAL CREDENTIALS AND PROXY SERVER ADDRESS HERE
+		var user = process.env.NTLM_USER || '';
+		var domain = process.env.NTLM_DOMAIN || '';
+		var password = process.env.NTLM_PASS || '';
+		var proxy = (process.env.NTLM_PROXY || '').split(':');
 
-			var targetUrl = url.parse('http://nodejs.org/');
+		var targetUrl = url.parse('http://nodejs.org/');
 
+		var credentials;
+		var message1;
+
+		beforeEach(function(){
 			assert.ok(user, 'Real user name is required for this test. Set environment variable NTLM_USER or enter it directly into test file.');
 			assert.ok(domain, 'Real domain name is required for this test. Set environment variable NTLM_DOMAIN or enter it directly into test file.');
 			assert.ok(password, 'Real user password is required for this test. Set environment variable NTLM_PASS or enter it directly into test file.');
@@ -626,11 +629,13 @@ describe('NTLM', function(){
 
 			this.timeout(3000);
 
-			var credentials = new ntlm.credentials(user, domain, password);
+			credentials = new ntlm.credentials(user, domain, password);
 
 			ntlm.securityLevel = 4;
-			var message1 = ntlm.createType1Message(credentials);
+			message1 = ntlm.createType1Message(credentials);
+		});
 
+		it('should work using NET module', function(done){
 			var headers = '';
 			var stage = 1;
 
@@ -681,6 +686,62 @@ describe('NTLM', function(){
 				done();
 			});
 			client.setKeepAlive(true);
+		});
+
+		it('should work using HTTP module', function(done){
+			var onResponse = function(res){
+				var message2 = ntlm.readType2Message(res.headers['proxy-authenticate']);
+				assert.ok(message2, 'Could not read message2 from server');
+
+				var message3 = ntlm.createType3Message(message2, credentials);
+				var req = http.request({
+					'host': proxy[0],
+					'port': proxy[1] || 3128,
+					'path': targetUrl.href,
+					'headers': {
+						'Host': targetUrl.host,
+						'Proxy-Authorization': 'NTLM ' + message3.toString('base64')
+					},
+					'agent': null,
+					'createConnection': function(){
+						sock.ntlmReused = true;
+						return sock;
+					}
+				}, onResponse2).on('socket', function(socket){
+					sock = socket;
+				}).end();
+			};
+
+			var onResponse2 = function(res){
+				var data = '';
+
+				assert.ok(res.statusCode === 200);
+
+				res.setEncoding('utf8');
+				res.on('data', function(chunk){
+					data += chunk;
+				});
+
+				res.on('end', function(){
+					assert.ok(data.indexOf('<title>node.js</title>') !== -1);
+					done();
+				});
+			};
+
+			var sock = null;
+
+			var http = require('http');
+			var req = http.request({
+				'host': proxy[0],
+				'port': proxy[1] || 3128,
+				'path': targetUrl.href,
+				'headers': {
+					'Host': targetUrl.host,
+					'Proxy-Authorization': 'NTLM ' + message1.toString('base64')
+				}
+			}, onResponse).on('socket', function(socket){
+				sock = socket;
+			}).end();
 		});
 	});
 });
