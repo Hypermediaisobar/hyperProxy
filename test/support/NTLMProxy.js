@@ -101,8 +101,7 @@ var NTLMProxy = function(getUserCredentialsCallback){
 		});
 	};
 
-	self.on('socket', function(socket){
-		console.log('socket!');
+	self.on('connection', function(socket){
 		socket.ntlmState = false;
 	});
 
