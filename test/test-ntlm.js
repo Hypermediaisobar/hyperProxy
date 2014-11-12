@@ -497,7 +497,7 @@ describe('NTLM', function(){
 		var credentials;
 
 		before(function(done){
-			credentials = new ntlm.credentials(USER, DOMAIN, PASSWORD);
+			credentials = new ntlm.credentials(USER, DOMAIN, PASSWORD, WORKSTATION);
 
 			var ready = (function(todo, callback){
 				var readyCount = 0;
@@ -525,8 +525,8 @@ describe('NTLM', function(){
 			server.listen(serverPort, '127.0.0.1');
 
 			var NTLMProxy = require(path.join(path.dirname(module.filename), 'support', 'NTLMProxy.js'));
-			proxy = NTLMProxy(function(username, domain, workstation){
-				return credentials;
+			proxy = NTLMProxy(DOMAIN, function(username, domain, workstation){
+				return new ntlm.credentials(username, domain, PASSWORD, workstation);
 			});
 			proxy.on('listening', function(){
 				proxyPort = this.address().port;

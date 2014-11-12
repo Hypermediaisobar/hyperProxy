@@ -10,13 +10,14 @@ var Flags = require(path.join(path.dirname(module.filename), '..', '..', 'lib', 
  * @constructor
  * @class
  *
+ * @param {string} DOMAIN
  * @param {Function} getUserCredentialsCallback
  */
-var NTLMProxy = function(getUserCredentialsCallback){
+var NTLMProxy = function(DOMAIN, getUserCredentialsCallback){
 	'use strict';
 
 	if (!(this instanceof NTLMProxy)) {
-		return new NTLMProxy(getUserCredentialsCallback);
+		return new NTLMProxy(DOMAIN, getUserCredentialsCallback);
 	}
 
 	var self = http.createServer();
@@ -119,9 +120,9 @@ var NTLMProxy = function(getUserCredentialsCallback){
 				return respondUnauthorized(req, res);
 			}
 
-			var message2 = ntlm.createType2Message('hyperProxy', new Flags(ntlm.FLAGS.negotiateUnicode | ntlm.FLAGS.targetTypeDomain | ntlm.FLAGS.negotiateNTLM | ntlm.FLAGS.negotiateTargetInfo, ntlm.FLAGS), new Buffer('0123456789abcdef', 'hex'), null, {
+			var message2 = ntlm.createType2Message(DOMAIN, new Flags(ntlm.FLAGS.negotiateUnicode | ntlm.FLAGS.targetTypeDomain | ntlm.FLAGS.negotiateNTLM | ntlm.FLAGS.negotiateTargetInfo, ntlm.FLAGS), new Buffer('0123456789abcdef', 'hex'), null, {
 				computerName: new Buffer('test', 'utf8').toString('ucs2'),
-				domainName: new Buffer('hyperProxy', 'utf8').toString('ucs2'),
+				domainName: new Buffer(DOMAIN, 'utf8').toString('ucs2'),
 				dnsComputerName: new Buffer('test.hyperProxy.fake', 'utf8').toString('ucs2'),
 				dnsDomainName: new Buffer('hyperProxy.fake', 'utf8').toString('ucs2')
 			});
@@ -139,13 +140,15 @@ var NTLMProxy = function(getUserCredentialsCallback){
 				return respondUnauthorized(req, res);
 			}
 
-			var credentials = getUserCredentialsCallback(message3.userName.toString('utf8'), message3.targetName.toString('utf8'), message3.workstationName.toString('utf8'));
+			var credentials = getUserCredentialsCallback(message3.userName.toString('ucs2'), message3.targetName.toString('ucs2'), message3.workstationName.toString('ucs2'));
 			if (!credentials) {
 				return respondUnauthorized(req, res);
 			}
 
-			var message3Check = ntlm.readType3Message(ntlm.createType3Message(req.connection.ntlmState.message2, credentials));
+			// Make sure we'll use the same nonce as client
+			message3.lm_response.copy(credentials.nonce, 0, message3.lm_response.length - 8);
 
+			var message3Check = ntlm.readType3Message(ntlm.createType3Message(req.connection.ntlmState.message2, credentials));
 			if (!message3Check || message3Check.lm_response.toString('hex') !== message3.lm_response.toString('hex') || message3Check.ntlm_response.toString('hex') !== message3.ntlm_response.toString('hex')) {
 				return respondUnauthorized(req, res);
 			}
