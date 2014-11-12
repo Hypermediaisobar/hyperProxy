@@ -525,7 +525,7 @@ describe('NTLM', function(){
 			server.listen(serverPort, '127.0.0.1');
 
 			var NTLMProxy = require(path.join(path.dirname(module.filename), 'support', 'NTLMProxy.js'));
-			proxy = NTLMProxy(DOMAIN, function(username, domain, workstation){
+			proxy = new NTLMProxy(DOMAIN, function(username, domain, workstation){
 				return new ntlm.credentials(username, domain, PASSWORD, workstation);
 			});
 			proxy.on('listening', function(){
@@ -715,7 +715,7 @@ describe('NTLM', function(){
 			var onResponse2 = function(res){
 				var data = '';
 
-				assert.ok(res.statusCode === 200);
+				assert.strictEqual(res.statusCode, 200, 'Response status code should be 200');
 
 				res.setEncoding('utf8');
 				res.on('data', function(chunk){
@@ -723,7 +723,7 @@ describe('NTLM', function(){
 				});
 
 				res.on('end', function(){
-					assert.ok(data.indexOf('<title>node.js</title>') !== -1);
+					assert.ok(data.indexOf('<title>node.js</title>') !== -1, 'HTML title not found');
 					done();
 				});
 			};
