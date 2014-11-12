@@ -551,7 +551,7 @@ describe('Proxy', function(){
 			};
 
 			var request = http.request(self.target, function(response){
-				assert.ok(response.statusCode === 200);
+				assert.strictEqual(response.statusCode, 200, 'Response status code should be 200');
 
 				var downloaded = '';
 				response.setEncoding('utf8');
@@ -561,7 +561,7 @@ describe('Proxy', function(){
 				});
 
 				response.on('end', function(){
-					assert.ok(downloaded.indexOf('<title>node.js</title>') !== -1);
+					assert.ok(downloaded.indexOf('<title>node.js</title>') !== -1, 'HTML title not found');
 					done();
 				});
 			}).on('error', console.error).end();
