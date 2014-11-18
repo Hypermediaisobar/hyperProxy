@@ -493,6 +493,9 @@ describe('NTLM', function(){
 		var http = require('http');
 		var server = null;
 		var proxy = null;
+		var proxyOptions = {
+			domainName: DOMAIN
+		};
 
 		var credentials;
 
@@ -525,7 +528,7 @@ describe('NTLM', function(){
 			server.listen(serverPort, '127.0.0.1');
 
 			var NTLMProxy = require(path.join(path.dirname(module.filename), 'support', 'NTLMProxy.js'));
-			proxy = new NTLMProxy(DOMAIN, function(username, domain, workstation){
+			proxy = new NTLMProxy(proxyOptions, function(username, domain, workstation){
 				return new ntlm.credentials(username, domain, PASSWORD, workstation);
 			});
 			proxy.on('listening', function(){
@@ -558,7 +561,6 @@ describe('NTLM', function(){
 			var message1 = ntlm.createType1Message(credentials);
 
 			var onResponse = function(res){
-
 				var message2 = ntlm.readType2Message(res.headers['proxy-authenticate']);
 				assert.ok(message2, 'Could not read message2 from server');
 
@@ -642,7 +644,7 @@ describe('NTLM', function(){
 			var net = require('net');
 			var client = net.connect({host: proxy[0], port: proxy[1] || 3128}, function(){
 				stage = 1;
-				client.write("HEAD "+targetUrl.href+" HTTP/1.1\r\nHost: "+targetUrl.host+"\r\nConnection: keep-alive\r\nProxy-Authorization: NTLM "+message1.toString('base64')+"\r\n\r\n");
+				client.write("HEAD "+targetUrl.href+" HTTP/1.1\r\nHost: "+targetUrl.host+"\r\nConnection: Keep-Alive\r\nProxy-Connection: Keep-Alive\r\nProxy-Authorization: NTLM "+message1.toString('base64')+"\r\n\r\n");
 			});
 			client.on('data', function(data){
 				if (stage === 1) {
@@ -700,6 +702,7 @@ describe('NTLM', function(){
 					'path': targetUrl.href,
 					'headers': {
 						'Host': targetUrl.host,
+						'Proxy-Connection': 'Keep-Alive',
 						'Proxy-Authorization': 'NTLM ' + message3.toString('base64')
 					},
 					'agent': null,
@@ -737,6 +740,7 @@ describe('NTLM', function(){
 				'path': targetUrl.href,
 				'headers': {
 					'Host': targetUrl.host,
+					'Proxy-Connection': 'Keep-Alive',
 					'Proxy-Authorization': 'NTLM ' + message1.toString('base64')
 				}
 			}, onResponse).on('socket', function(socket){

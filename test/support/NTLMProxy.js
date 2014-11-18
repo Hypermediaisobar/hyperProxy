@@ -10,29 +10,49 @@ var Flags = require(path.join(path.dirname(module.filename), '..', '..', 'lib', 
  * @constructor
  * @class
  *
- * @param {string} DOMAIN
+ * @param {Object} options
  * @param {Function} getUserCredentialsCallback
  */
-var NTLMProxy = function(DOMAIN, getUserCredentialsCallback){
+var NTLMProxy = function(options, getUserCredentialsCallback){
 	'use strict';
 
 	if (!(this instanceof NTLMProxy)) {
-		return new NTLMProxy(DOMAIN, getUserCredentialsCallback);
+		return new NTLMProxy(options, getUserCredentialsCallback);
 	}
+
+	options               = options               || {};
+	options.domainName    = options.domainName    || 'hyperProxy';
+	options.enableConnect = options.enableConnect || false;
 
 	var self = http.createServer();
 	var ntlm = new NTLM();
 
+	var _respond = function(res, statusCode, headers, text) {
+		if (res instanceof http.ServerResponse) {
+			res.writeHead(407, headers);
+			res.end(text);
+		}
+		else {
+			var output = 'HTTP/1.1 407 Proxy Authentication Required\r\n';
+			Object.keys(headers).forEach(function(key){
+				output += key + ': ' + headers[key] + '\r\n';
+			});
+			output += '\r\n' + (text || '');
+			res.write(output);
+		}
+	};
+
 	var respondUnauthorized = function(req, res) {
-		var text = 'Proxy Authentication Required';
-		res.writeHead(407, {
+		var headers = {
 			'Content-Type': 'text/plain; charset=UTF8',
-			'Content-Length': text.length,
+			'Content-Length': 0,
 			'Date': (new Date()).toUTCString(),
-			'Proxy-Authenticate': 'NTLM',
-			'Connection': 'close'
-		});
-		res.end(text);
+			'Connection': 'close',
+			'Proxy-Connection': 'close',
+			'Proxy-Authenticate': 'NTLM'
+		};
+
+		_respond(res, 407, headers);
 
 		if (req.connection) {
 			req.connection.end();
@@ -41,17 +61,19 @@ var NTLMProxy = function(DOMAIN, getUserCredentialsCallback){
 
 	var respondWithMessage = function(req, res, message) {
 		var text = 'Proxy Authentication Required';
-		res.writeHead(407, {
+		var headers = {
 			'Content-Type': 'text/plain; charset=UTF8',
 			'Content-Length': text.length,
 			'Date': (new Date()).toUTCString(),
-			'Proxy-Authenticate': 'NTLM '+message.toString('base64'),
-			'Connection': 'keep-alive'
-		});
-		res.end(text);
+			'Connection': 'Keep-Alive',
+			'Proxy-Connection': 'Keep-Alive',
+			'Proxy-Authenticate': 'NTLM '+message.toString('base64')
+		};
+
+		_respond(res, 407, headers, text);
 	};
 
-	var tunnelRequest = function(request, response) {
+	var tunnelRequest = function(request, response, data) {
 		var reqURL = url.parse(request.url, false, true);
 		reqURL.protocol = reqURL.protocol || (request.connection.encrypted ? 'https:' : 'http:');
 		reqURL.host = reqURL.host || ''; // Ugly: Just to allow splitting in next two lines.
@@ -88,6 +110,10 @@ var NTLMProxy = function(DOMAIN, getUserCredentialsCallback){
 			response.end();
 		});
 
+		if (data && data.length > 0) {
+			destination.write(data);
+		}
+
 		request.pipe(destination);
 
 		request.on('close', function(){
@@ -102,11 +128,7 @@ var NTLMProxy = function(DOMAIN, getUserCredentialsCallback){
 		});
 	};
 
-	self.on('connection', function(socket){
-		socket.ntlmState = false;
-	});
-
-	self.on('request', function(req, res){
+	var authorizeRequest = function(req, res, head) {
 		var text = '';
 
 		if (!req.headers.hasOwnProperty('proxy-authorization')) {
@@ -120,9 +142,9 @@ var NTLMProxy = function(DOMAIN, getUserCredentialsCallback){
 				return respondUnauthorized(req, res);
 			}
 
-			var message2 = ntlm.createType2Message(DOMAIN, new Flags(ntlm.FLAGS.negotiateUnicode | ntlm.FLAGS.targetTypeDomain | ntlm.FLAGS.negotiateNTLM | ntlm.FLAGS.negotiateTargetInfo, ntlm.FLAGS), new Buffer('0123456789abcdef', 'hex'), null, {
+			var message2 = ntlm.createType2Message(options.domainName, new Flags(ntlm.FLAGS.negotiateUnicode | ntlm.FLAGS.targetTypeDomain | ntlm.FLAGS.negotiateNTLM | ntlm.FLAGS.negotiateTargetInfo, ntlm.FLAGS), new Buffer('0123456789abcdef', 'hex'), null, {
 				computerName: new Buffer('test', 'utf8').toString('ucs2'),
-				domainName: new Buffer(DOMAIN, 'utf8').toString('ucs2'),
+				domainName: new Buffer(options.domainName, 'utf8').toString('ucs2'),
 				dnsComputerName: new Buffer('test.hyperProxy.fake', 'utf8').toString('ucs2'),
 				dnsDomainName: new Buffer('hyperProxy.fake', 'utf8').toString('ucs2')
 			});
@@ -155,8 +177,23 @@ var NTLMProxy = function(DOMAIN, getUserCredentialsCallback){
 		}
 
 		delete req.headers['proxy-authorization'];
-		tunnelRequest(req, res);
+		tunnelRequest(req, res, head);
+	};
+
+	self.on('connection', function(socket){
+		socket.ntlmState = false;
 	});
+
+	self.on('connect', function(req, socket, head){
+		if (!options.enableConnect) {
+			socket.write('HTTP/1.1 405 Method Not Allowed\r\nConnection: close\r\nProxy-Connection: close\r\n\r\n');
+			return socket.end();
+		}
+
+		authorizeRequest(req, socket, head);
+	});
+
+	self.on('request', authorizeRequest);
 
 	return self;
 };

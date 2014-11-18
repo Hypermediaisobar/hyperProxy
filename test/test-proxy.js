@@ -511,6 +511,75 @@ describe('Proxy', function(){
 		});
 	});
 
+	describe('HTTP through fake NTLMProxy', function(){
+		// ENTER YOUR REAL CREDENTIALS AND PROXY SERVER ADDRESS HERE
+		var user = 'username';
+		var password = 'SecREt01';
+		var domain = 'DOMAIN';
+		var proxyConfig = ['127.0.0.1', 3131];
+		var proxy = null;
+
+		before(function(done){
+			var init = self.proxy.whenAllDone.bind(self, {todo: 2}, done);
+
+			self.options.proxy = {
+				hostname: proxyConfig[0],
+				port: proxyConfig[1]
+			};
+
+			self.proxy.start(init);
+
+			proxy = (new require(path.join(path.dirname(module.filename), 'support', 'NTLMProxy.js')))({domainName: domain, enableConnect: true}, function(username, domain, workstation){
+				return new ntlm.credentials(username, domain, password, workstation);
+			});
+			proxy.on('listening', function(){
+				self.proxy.port = proxyConfig[1] = this.address().port;
+				init();
+			});
+			proxy.listen(proxyConfig[1], proxyConfig[0], null, null);
+		});
+
+		after(function(done){
+			var cleanup = self.proxy.whenAllDone.bind(self, {todo: 2}, function(){
+				self.options.proxy = false;
+				done();
+			});
+
+			self.proxy.stop(cleanup);
+			proxy.close(cleanup);
+		});
+
+		it('should get correct answer from server', function(done){
+			this.timeout(2000);
+
+			self.target = {
+				hostname: self.options.host,
+				port: self.options.port,
+				path: 'http://nodejs.org/',
+				headers: {
+					'Host': 'nodejs.org',
+					'Proxy-Authorization': 'Basic '+((new Buffer(domain + '\\' + user + ':' + password, 'utf8')).toString('base64'))
+				},
+			};
+
+			var request = http.request(self.target, function(response){
+				assert.strictEqual(response.statusCode, 200, 'Response status code should be 200');
+
+				var downloaded = '';
+				response.setEncoding('utf8');
+
+				response.on('data', function(chunk){
+					downloaded += chunk;
+				});
+
+				response.on('end', function(){
+					assert.ok(downloaded.indexOf('<title>node.js</title>') !== -1, 'HTML title not found');
+					done();
+				});
+			}).on('error', console.error).end();
+		});
+	});
+
 	describe('HTTP through another proxy with authentication', function(){
 		// ENTER YOUR REAL CREDENTIALS AND PROXY SERVER ADDRESS HERE
 		var user = process.env.NTLM_USER || '';
