@@ -386,7 +386,7 @@ describe('Proxy', function(){
 				port: options2.httpPort,
 				method: 'CONNECT',
 				agent: false,
-				path: self.options.host+':'+self.options.testServerPort,
+				path: self.options.host+':'+self.options.testServerPort
 			}).on('connect', function(res, socket, head) {
 				self.target = {
 					hostname: self.options.host,
@@ -512,15 +512,14 @@ describe('Proxy', function(){
 	});
 
 	describe('HTTP through fake NTLMProxy', function(){
-		// ENTER YOUR REAL CREDENTIALS AND PROXY SERVER ADDRESS HERE
 		var user = 'username';
 		var password = 'SecREt01';
 		var domain = 'DOMAIN';
-		var proxyConfig = ['127.0.0.1', 3131];
+		var proxyConfig = ['127.0.0.1', 16580];
 		var proxy = null;
 
 		before(function(done){
-			var init = self.proxy.whenAllDone.bind(self, {todo: 2}, done);
+			var init = self.proxy.whenAllDone.bind(self, {todo: 3}, done);
 
 			self.options.proxy = {
 				hostname: proxyConfig[0],
@@ -537,15 +536,40 @@ describe('Proxy', function(){
 				init();
 			});
 			proxy.listen(proxyConfig[1], proxyConfig[0], null, null);
+
+			self.content = "HELLO WORLD!\n";
+			self.server = false;
+			self.server = http.createServer(function(request, response){
+				var data = '';
+
+				request.setEncoding('utf8');
+				request.on('data', function(chunk){
+					data += chunk;
+				});
+				request.on('end', function(){
+					response.writeHead(200, {
+						'Content-Type': 'text/plain',
+						'Content-Length': self.content.length + data.length,
+						'Connection': 'close'
+					});
+					response.write(self.content);
+					response.write(data);
+					response.end();
+				});
+			});
+			self.server.listen(self.options.testServerPort, self.options.host, 511, function(){
+				init();
+			});
 		});
 
 		after(function(done){
-			var cleanup = self.proxy.whenAllDone.bind(self, {todo: 2}, function(){
+			var cleanup = self.proxy.whenAllDone.bind(self, {todo: 3}, function(){
 				self.options.proxy = false;
 				done();
 			});
 
 			self.proxy.stop(cleanup);
+			self.server.close(cleanup);
 			proxy.close(cleanup);
 		});
 
@@ -555,15 +579,15 @@ describe('Proxy', function(){
 			self.target = {
 				hostname: self.options.host,
 				port: self.options.port,
-				path: 'http://nodejs.org/',
+				path: 'http://'+self.options.host+':'+self.options.testServerPort+'/',
 				headers: {
-					'Host': 'nodejs.org',
+					'Host': self.options.host+':'+self.options.testServerPort,
 					'Proxy-Authorization': 'Basic '+((new Buffer(domain + '\\' + user + ':' + password, 'utf8')).toString('base64'))
 				},
 			};
 
 			var request = http.request(self.target, function(response){
-				assert.strictEqual(response.statusCode, 200, 'Response status code should be 200');
+				assert.strictEqual(response.statusCode, 200, 'Response status code should be 200, not '+response.statusCode);
 
 				var downloaded = '';
 				response.setEncoding('utf8');
@@ -573,7 +597,7 @@ describe('Proxy', function(){
 				});
 
 				response.on('end', function(){
-					assert.ok(downloaded.indexOf('<title>node.js</title>') !== -1, 'HTML title not found');
+					assert.strictEqual(downloaded, self.content);
 					done();
 				});
 			}).on('error', console.error).end();

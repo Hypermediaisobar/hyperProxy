@@ -50,7 +50,9 @@ var settings = {
 	// Or:
 	proxy: {
 		'hostname': 'company.proxy',
-		'port': 8888
+		'port': 8888,
+		// Set `ntlm` to true, if proxy requires ntlm authentication
+		'ntlm': true
 	},
 	*/
 	/*
