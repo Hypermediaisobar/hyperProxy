@@ -147,6 +147,17 @@ supervisor example.js
 It will restart the proxy automatically whenever you change your proxy/configuration file.
 
 
+## Additional software
+
+It is generally easier to use some additional software to quickly switch between proxies (or proxy and no-proxy settings). If your operating system of choice does not provide such feature, you can either install some additional application to switch system proxy, or install plugins for browsers.
+For Google Chrome, there is `Proxy SwitchyOmega` (https://chrome.google.com/webstore/detail/proxy-switchyomega/padekgcemlokbadohgkifijomclgjgif), that works quite well and allows switching between proxies with a single click.
+For Firefox, there is `Foxy Proxy Basic` (https://addons.mozilla.org/en-US/firefox/addon/foxyproxy-basic/) or it's advanced version `Foxy Proxy Standard` (https://addons.mozilla.org/pl/firefox/addon/foxyproxy-standard/).
+
+Of course, there are more similar plugins out there, so you can select the one you prefer - hyperProxy should work with any of them.
+
+Another way is to use system with various browsers in a virtual machine, and set global proxy there.
+
+
 ## Helper functions
 
 hyperProxy exports two helper functions: overrideWithFilesFromPath and overrideWithSpecifiedFile. Those functions try to serve files with correct mime type. By default they support:
