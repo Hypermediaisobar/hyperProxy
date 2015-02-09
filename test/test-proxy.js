@@ -180,7 +180,7 @@ describe('Proxy', function(){
 		});
 
 		it('should get correct GET answer from server through HTTPS proxy', function(done){
-			this.timeout(2000);
+			this.timeout(8000);
 
 			self.target = {
 				hostname: self.options.host,
@@ -207,7 +207,7 @@ describe('Proxy', function(){
 		});
 
 		it('should get correct POST answer from server through HTTPS proxy', function(done){
-			this.timeout(2000);
+			this.timeout(4000);
 
 			self.target = {
 				hostname: self.options.host,
@@ -235,7 +235,7 @@ describe('Proxy', function(){
 		});
 
 		it('should get correct answer from server through HTTPS tunnel on HTTP proxy', function(done){
-			this.timeout(2000);
+			this.timeout(4000);
 
 			// Based on: https://github.com/joyent/node/issues/2474#issuecomment-3481078
 			var tunnel = http.request({ // establishing a tunnel
@@ -373,7 +373,7 @@ describe('Proxy', function(){
 		});
 
 		it('should get correct answer from server', function(done){
-			this.timeout(2000);
+			this.timeout(8000);
 
 			options2.proxy = {
 				hostname: self.options.host,
@@ -444,7 +444,7 @@ describe('Proxy', function(){
 		});
 
 		it('should get correct certificate from HTTPS server', function(done){
-			this.timeout(3000);
+			this.timeout(8000);
 
 			// We are connecting twice, because current version of node does not have asynchronous SNICallback.
 			// TODO: simplify this to a single connection, without setTimout, when node v0.12 shows up.
@@ -468,7 +468,7 @@ describe('Proxy', function(){
 		});
 
 		it('should get correct certificate from HTTPS-over-HTTP proxy', function(done){
-			this.timeout(2000);
+			this.timeout(8000);
 
 			// Based on: https://github.com/joyent/node/issues/2474#issuecomment-3481078
 			var tunnel = http.request({ // establishing a tunnel
@@ -496,7 +496,7 @@ describe('Proxy', function(){
 		});
 
 		it('should get correct certificate from HTTPS proxy', function(done){
-			this.timeout(2000);
+			this.timeout(4000);
 
 			https.request({hostname: self.options.host, port: self.options.httpsPort, headers: {host: 'example.com'}, path: 'https://'+self.options.host+':'+self.options.testServerPort+'/hello'}, function(res){
 				res.on('data', function(data){});
@@ -511,7 +511,7 @@ describe('Proxy', function(){
 		});
 	});
 
-	describe('HTTP through fake NTLMProxy', function(){
+	describe.skip('HTTP through fake NTLMProxy', function(){
 		var user = 'username';
 		var password = 'SecREt01';
 		var domain = 'DOMAIN';
@@ -604,7 +604,7 @@ describe('Proxy', function(){
 		});
 	});
 
-	describe('HTTP through another proxy with authentication', function(){
+	describe.skip('HTTP through another proxy with authentication', function(){
 		// ENTER YOUR REAL CREDENTIALS AND PROXY SERVER ADDRESS HERE
 		var user = process.env.NTLM_USER || '';
 		var password = process.env.NTLM_PASS || '';
