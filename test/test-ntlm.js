@@ -726,7 +726,7 @@ describe('NTLM', function(){
 				});
 
 				res.on('end', function(){
-					assert.ok(data.indexOf('<title>node.js</title>') !== -1, 'HTML title not found');
+					assert.ok(data.indexOf('<title>Node.js</title>') !== -1, 'HTML title not found');
 					done();
 				});
 			};
