@@ -696,28 +696,30 @@ describe('NTLM', function(){
 				assert.ok(message2, 'Could not read message2 from server');
 
 				var message3 = ntlm.createType3Message(message2, credentials);
-				var req = http.request({
-					'host': proxy[0],
-					'port': proxy[1] || 3128,
-					'path': targetUrl.href,
-					'headers': {
-						'Host': targetUrl.host,
-						'Proxy-Connection': 'Keep-Alive',
-						'Proxy-Authorization': 'NTLM ' + message3.toString('base64')
-					},
-					'agent': null,
-					'createConnection': function(){
-						sock.ntlmReused = true;
-						return sock;
-					}
-				}, onResponse2).on('socket', function(socket){
-					sock = socket;
-				}).end();
+				res.on('data', function(){});
+				res.on('end', function(){
+					http.request({
+						'host': proxy[0],
+						'port': proxy[1] || 3128,
+						'path': targetUrl.href,
+						'headers': {
+							'Host': targetUrl.host,
+							'Proxy-Connection': 'Close',
+							'Proxy-Authorization': 'NTLM ' + message3.toString('base64')
+						},
+						'agent': null,
+						'createConnection': function(){
+							sock.ntlmReused = true;
+							return sock;
+						}
+					}, onResponse2).on('socket', function(socket){
+						sock = socket;
+					}).end();
+				});
 			};
 
 			var onResponse2 = function(res){
 				var data = '';
-
 				assert.strictEqual(res.statusCode, 200, 'Response status code should be 200');
 
 				res.setEncoding('utf8');
@@ -733,6 +735,7 @@ describe('NTLM', function(){
 
 			var sock = null;
 
+			var net = require('net');
 			var http = require('http');
 			var req = http.request({
 				'host': proxy[0],
@@ -742,6 +745,10 @@ describe('NTLM', function(){
 					'Host': targetUrl.host,
 					'Proxy-Connection': 'Keep-Alive',
 					'Proxy-Authorization': 'NTLM ' + message1.toString('base64')
+				},
+				'agent': null,
+				'createConnection': function(){
+					return net.connect({host: proxy[0], port: proxy[1] || 3128});
 				}
 			}, onResponse).on('socket', function(socket){
 				sock = socket;
