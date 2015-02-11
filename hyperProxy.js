@@ -79,25 +79,6 @@ var createFileResponseHandler = require(path.join(path.dirname(module.filename),
  *      'key': './certs/ssl-key.pem',
  *      'cert': './certs/ssl-cert.pem',
  *
- *      // Set CNTLM to `false`, if cntlm proxy is not required to connect to the world.
- *      cntlm: {
- *          // Set this to the port number that is used by cntlm already running in the background
- *          // or that will be tried for spawned cntlm proxy.
- *          // Set this to false, if cntlm should not be used at all.
- *          'port': false,//3130,
- *          // Where was cntlm installed and configured (directory should contain both cntlm executable and cntlm.ini files)?
- *          // Set to false, if cntlm is already running and should not be controlled by our proxy
- *          'path': false,//'C:\\Program Files (x86)\\Cntlm\\',
- *          // How many ports should be tried before giving up and exiting?
- *          // This is needed when port specified above is already used and path is specified, i.e.,
- *          // cntlm is not running yet and should be spawned.
- *          'hitpoints': 5,
- *          // Should we always try to kill any other CNTLM running, before starting ours?
- *          'killOnBeforeStart': true,
- *          // Do not change this one!
- *          '_PID': false
- *      },
- *
  *      // Default proxy location is used in the PAC file output.
  *      // Set proxy to false to not use any default proxy in the PAC file output
  *      // (PAC will return DIRECT connection value in that case).
@@ -182,33 +163,10 @@ function HyperProxy(overrides, options) {
 	 */
 	FilteredProxy.call(this, options);
 
-	/*
-	 *  Update options with defaults.
-	 */
-	options.cntlm = options.cntlm || false;
-
 	/**
 	 *  @private
 	 */
 	var self = this;
-
-	/*
-	 *  Spawn cntlm "gateway", but only if options.cntlm.port and options.cntlm.path are set.
-	 */
-	if (options.cntlm && options.cntlm.port && options.cntlm.path) {
-		process.on('cntlmReady', function(PID){
-			console.log('cntlm is running as '+PID);
-		});
-
-		process.on('cntlmError', function(){
-			console.log('Could not run cntlm! Exiting.');
-			process.exit();
-		});
-
-		var CNTLM = require(path.join(path.dirname(module.filename), 'lib', 'CNTLM.js'));
-		options.cntlm.verbose = options.cntlm.verbose || options.verbose;
-		this.cntlm = new CNTLM(options.cntlm);
-	}
 
 	/*
 	 *  Setup our JS proxy.
