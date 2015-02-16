@@ -56,7 +56,7 @@ var settings = {
 	// This port can actually be used for both HTTP and HTTPS.
 	'httpPort': 8000,
 
-	// Without separate PAC file server, hyperProxy will serve `http://localhost:[httpPort]/proxy.pac` file.
+	// Without separate PAC file server, hyperProxy will serve `http://localhost:[httpPort]/proxy.pac` instead.
 	// You can set pacPort to specific port number to make hyperProxy serve PAC file on that port.
 	// 'pacPort': 8002,
 
@@ -72,6 +72,8 @@ var settings = {
 	// WARNING: You can add certificate to your browsers, so they will stop bugging you about security risk, but be sure to
 	// either set -days to 1, or add certificate on user account that is NEVER used for accessing important sites like bank or
 	// any site that has your credit card information stored.
+	//
+	// Set both `key` and `cert` options to `false` to disable HTTPS.
 	//'key': fs.readFileSync('my_server.key', 'utf8'),
 	//'cert': fs.readFileSync('my_server.crt', 'utf8'),
 

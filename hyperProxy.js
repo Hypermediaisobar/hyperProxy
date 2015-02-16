@@ -71,20 +71,23 @@ var createFileResponseHandler = require(path.join(path.dirname(module.filename),
  *
  *  var HYPERPROXY = {
  *      'httpPort': 8000,
- *      'httpsPort': 8001,
- *      // Set pac_port to false if PAC file server should not be started.
- *      // Without separate PAC file server, hyperProxy will serve `http://localhost:[httpPort]/proxy.pac` file instead.
- *      'pacPort': false,//8002
+ *      'httpsPort': 8001, // optional, defaults to port + 1
+ *      // Without separate PAC file server, hyperProxy will serve `http://localhost:[httpPort]/proxy.pac` instead.
+ *      // You can set pacPort to specific port number to make hyperProxy serve PAC file on that port.
+ *      //'pacPort': 8002,
  *      'verbose': true,//'debug',
- *      'key': './certs/ssl-key.pem',
- *      'cert': './certs/ssl-cert.pem',
+ *
+ *      // Defaults to `lib/certs/server.crt` and `lib/certs/server.key`
+ * 	    // Set key and cert to `false` to disable HTTPS support.
+ *      'key': fs.readFileSync('./certs/ssl-key.pem'), 'utf8'),
+ *      'cert': fs.readFileSync('./certs/ssl-cert.pem'), 'utf8'),
  *
  *      // Default proxy location is used in the PAC file output.
  *      // Set proxy to false to not use any default proxy in the PAC file output
  *      // (PAC will return DIRECT connection value in that case).
  *      proxy: false,
  *      //proxy: {
- *      //  'hostname': 'hyper.proxy',
+ *      //  'hostname': 'company.proxy',
  *      //  'port': 3128
  *      //},
  *      //proxy: {
@@ -225,10 +228,13 @@ function HyperProxy(overrides, options) {
 	}
 
 	this.start(function(){
-		console.log("\nHTTP(S) proxy is listening on port "+options.httpPort);
+		var hasHTTPS = self.httpsServer ? true : false;
+		console.log("\nHTTP"+(hasHTTPS ? "(S)" : "")+" proxy is listening on port "+options.httpPort);
 		if (!options.pacPort) {
 			console.log("\nServing PAC file for your web browser(s) at http://"+(options.hostname ? options.hostname : 'localhost') + ':' + options.httpPort + '/proxy.pac');
-			console.log("\nTo test without possible additional problems with HTTPS certificates, you can start Chrome browser like this:\n\n---\n\t" + 'chrome --proxy-pac-url="http://'+(options.hostname ? options.hostname : 'localhost') + ':' + options.httpPort + '/proxy.pac" --ignore-certificate-errors --user-data-dir=/tmp/random/unique' + "\n---\n\n");
+			if (hasHTTPS) {
+				console.log("\nTo test without possible additional problems with HTTPS certificates, you can start Chrome browser like this:\n\n---\n\t" + 'chrome --proxy-pac-url="http://'+(options.hostname ? options.hostname : 'localhost') + ':' + options.httpPort + '/proxy.pac" --ignore-certificate-errors --user-data-dir=/tmp/random/unique' + "\n---\n\n");
+			}
 		}
 	});
 }

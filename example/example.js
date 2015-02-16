@@ -37,10 +37,10 @@ var overrides = {
 */
 var settings = {
 	'httpPort': 8000,
-	//'httpsPort': 8001,// optional
-	// Set pacPort to false if PAC file server should not be started.
-	// Without separate PAC file server, hyperProxy will serve `http://localhost:[httpPort]/proxy.pac` file instead.
-	'pacPort': false,//8002,
+
+	// Without separate PAC file server, hyperProxy will serve `http://localhost:[httpPort]/proxy.pac` instead.
+	// You can set pacPort to specific port number to make hyperProxy serve PAC file on that port.
+	//'pacPort': 8002,
 
 	// Default proxy location is used in the PAC file output.
 	// Set proxy to false to not use any default proxy in the PAC file output
