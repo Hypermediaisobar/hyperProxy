@@ -499,9 +499,9 @@ describe('Proxy', function(){
 			this.timeout(4000);
 
 			https.request({hostname: self.options.host, port: self.options.httpsPort, headers: {host: 'example.com'}, path: 'https://'+self.options.host+':'+self.options.testServerPort+'/hello'}, function(res){
+				var cert = res.connection.getPeerCertificate();
 				res.on('data', function(data){});
 				res.on('end', function(){
-					var cert = res.connection.getPeerCertificate();
 					assert.strictEqual(cert.subject.O, 'hyperProxy target');
 					assert.strictEqual(cert.subject.CN, 'example.com');
 					done();
