@@ -77,8 +77,9 @@ var createFileResponseHandler = require(path.join(path.dirname(module.filename),
  *      //'pacPort': 8002,
  *      'verbose': true,//'debug',
  *
- *      // Defaults to `lib/certs/server.crt` and `lib/certs/server.key`
- * 	    // Set key and cert to `false` to disable HTTPS support.
+ *      // Defaults to autocreated `hyperProxy-root.key` and `hyperProxy-root.crt`,
+ *      // or `lib/certs/server.crt` and `lib/certs/server.key` if creating fails.
+ *      // Set key and cert to `false` to disable HTTPS support.
  *      'key': fs.readFileSync('./certs/ssl-key.pem'), 'utf8'),
  *      'cert': fs.readFileSync('./certs/ssl-cert.pem'), 'utf8'),
  *
