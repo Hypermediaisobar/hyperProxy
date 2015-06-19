@@ -3,37 +3,54 @@
  *	http://visionmedia.github.io/mocha/
  */
 
+var EventEmitter = require('events').EventEmitter;
 var assert = require('assert');
 var http = require('http');
 var path = require('path');
 var fs = require('fs');
 
+var httpMocks = require('node-mocks-http');
+
 describe('ServeFile', function(){
 	'use strict';
 
+	var createFileResponseHandler;
 	var responseHandler;
 
+	var options = {
+		documentRoot: null,
+		followSymbolicLinks: false
+	};
+
 	before(function(done){
-		responseHandler = require(path.join(path.dirname(module.filename), '..', 'lib', 'ServeFile.js')).createFileResponseHandler;
+		createFileResponseHandler = require(path.join(path.dirname(module.filename), '..', 'lib', 'ServeFile.js')).createFileResponseHandler;
 		done();
 	});
 
 	it('should exist', function(){
-		assert.ok(responseHandler);
+		assert.ok(createFileResponseHandler);
 	});
 
 	it('should be a function', function(){
-		assert.ok(responseHandler instanceof Function);
+		assert.ok(createFileResponseHandler instanceof Function);
+	});
+
+	it('should return error if secified documentRoot does not exist', function(){
+		responseHandler = createFileResponseHandler({
+			documentRoot: '/unknown/location',
+			followSymbolicLinks: false
+		});
+
+		assert.ok(responseHandler instanceof Error);
 	});
 
 	it('should return function', function(done){
 		fs.realpath(path.dirname(module.filename), function(err, realpath){
 			assert.ifError(err);
 
-			responseHandler = responseHandler({
-				root: realpath,
-				followSymbolicLinks: false
-			});
+			options.documentRoot = realpath;
+
+			responseHandler = createFileResponseHandler(options);
 			assert.ok(responseHandler instanceof Function);
 			done();
 		});
@@ -122,43 +139,101 @@ describe('ServeFile', function(){
 			};
 			assert.doesNotThrow(f);
 		});
+
+		// We already tested full server request and response, so from now on we can test
+		// using simple mocks. Not so many lines shorter, but simpler blocks and logic
+		// (no need for running real server and making real requests).
 		it('should be 1 byte if provided range is invalid (end is lesser than start)', function(done){
 			var byteFirst = 23;
 			var byteLast = 22;
 
-			var data = '';
-			var f = function(){
-				var server = http.createServer(function(req, res){
-					responseHandler(res, module.filename, req.headers);
+			var res = httpMocks.createResponse({
+				eventEmitter: EventEmitter
+			});
+
+			res.on('end', function(){
+				var headers = res._getHeaders();
+				var data = res._getData();
+				assert.ok(headers['Content-Type'], 'Missing Content-Type header');
+				assert.ok(headers['Content-Type'].indexOf('application/javascript') >= 0, 'Wrong MIME type');
+				assert.ok(headers['Content-Range'], 'Missing Content-Range header');
+				assert.ok(headers['Content-Range'].indexOf('bytes '+byteFirst+'-'+byteFirst) === 0);
+				assert.ok(headers['Accept-Ranges'], 'Missing Accept-Ranges header');
+				assert.strictEqual(data, source.substring(byteFirst, byteFirst+1)); // substring is not inclusive
+				done();
+			});
+
+			responseHandler(res, module.filename, {
+				'range': 'bytes='+byteFirst+'-'+byteLast
+			});
+		});
+		it('should be 404 if requested file does not exist', function(done){
+			var res = httpMocks.createResponse({
+				eventEmitter: EventEmitter
+			});
+
+			res.on('end', function(){
+				assert.strictEqual(res.statusCode, 404);
+				done();
+			});
+
+			responseHandler(res, '/not/existant');
+		});
+		it('should be 304 if requested file was not modified', function(done){
+			fs.lstat(module.filename, function(err, stats){
+				assert.ifError(err, 'Could not stat test file');
+
+				var res = httpMocks.createResponse({
+					eventEmitter: EventEmitter
 				});
-				server.on('close', function(){
-					assert.strictEqual(data, source.substring(byteFirst, byteFirst+1)); // substring is not inclusive
+
+				res.on('end', function(){
+					assert.strictEqual(res.statusCode, 304);
 					done();
 				});
-				server.on('listening', function(){
-					http.request({
-						hostname: '127.0.0.1',
-						port: 8000,
-						path: '/',
-						method: 'GET',
-						headers: {
-							'Range': 'bytes='+byteFirst+'-'+byteLast
-						}
-					}, function(res){
-						assert.ok(res.headers['content-type'], 'Missing Content-Type header');
-						assert.ok(res.headers['content-type'].indexOf('application/javascript') >= 0, 'Wrong MIME type');
-						assert.ok(res.headers['content-range'], 'Missing Content-Range header');
-						assert.ok(res.headers['content-range'].indexOf('bytes '+byteFirst+'-'+byteFirst) === 0);
-						assert.ok(res.headers['accept-ranges'], 'Missing Accept-Ranges header');
-						res.on('data', function(chunk){data += chunk.toString('utf-8');});
-						res.on('end', function(){
-							server.close();
-						});
-					}).end();
+
+				responseHandler(res, module.filename, {
+					'if-modified-since': (new Date(+stats.mtime - 100000)).toGMTString()
 				});
-				server.listen('8000', '127.0.0.1');
-			};
-			assert.doesNotThrow(f);
+			});
+		});
+		it('should be 200 if requested file was modified', function(done){
+			fs.lstat(module.filename, function(err, stats){
+				assert.ifError(err, 'Could not stat test file');
+
+				var res = httpMocks.createResponse({
+					eventEmitter: EventEmitter
+				});
+
+				res.on('end', function(){
+					assert.strictEqual(res.statusCode, 200);
+					done();
+				});
+
+				responseHandler(res, module.filename, {
+					'if-modified-since': (new Date(+stats.mtime + 100000)).toGMTString()
+				});
+			});
+		});
+		it('should set proper cache controlling headers', function(done){
+			options.cacheTimeInSeconds = 60;
+
+			var res = httpMocks.createResponse({
+				eventEmitter: EventEmitter
+			});
+
+			res.on('end', function(){
+				assert.strictEqual(res.statusCode, 200);
+				var headers = res._getHeaders();
+
+				assert.ok(headers['Cache-Control'], 'Missing Content-Type header');
+				assert.strictEqual(headers['Cache-Control'], 'private, max-age='+options.cacheTimeInSeconds, 'Wrong Cache-Control header');
+
+				options.cacheTimeInSeconds = 0;
+				done();
+			});
+
+			responseHandler(res, module.filename);
 		});
 	});
 });
