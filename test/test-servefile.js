@@ -122,5 +122,43 @@ describe('ServeFile', function(){
 			};
 			assert.doesNotThrow(f);
 		});
+		it('should be 1 byte if provided range is invalid (end is lesser than start)', function(done){
+			var byteFirst = 23;
+			var byteLast = 22;
+
+			var data = '';
+			var f = function(){
+				var server = http.createServer(function(req, res){
+					responseHandler(res, module.filename, req.headers);
+				});
+				server.on('close', function(){
+					assert.strictEqual(data, source.substring(byteFirst, byteFirst+1)); // substring is not inclusive
+					done();
+				});
+				server.on('listening', function(){
+					http.request({
+						hostname: '127.0.0.1',
+						port: 8000,
+						path: '/',
+						method: 'GET',
+						headers: {
+							'Range': 'bytes='+byteFirst+'-'+byteLast
+						}
+					}, function(res){
+						assert.ok(res.headers['content-type'], 'Missing Content-Type header');
+						assert.ok(res.headers['content-type'].indexOf('application/javascript') >= 0, 'Wrong MIME type');
+						assert.ok(res.headers['content-range'], 'Missing Content-Range header');
+						assert.ok(res.headers['content-range'].indexOf('bytes '+byteFirst+'-'+byteFirst) === 0);
+						assert.ok(res.headers['accept-ranges'], 'Missing Accept-Ranges header');
+						res.on('data', function(chunk){data += chunk.toString('utf-8');});
+						res.on('end', function(){
+							server.close();
+						});
+					}).end();
+				});
+				server.listen('8000', '127.0.0.1');
+			};
+			assert.doesNotThrow(f);
+		});
 	});
 });
