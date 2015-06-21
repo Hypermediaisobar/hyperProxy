@@ -23,7 +23,7 @@ describe('ServeFile', function(){
 	};
 
 	before(function(done){
-		createFileResponseHandler = require(path.join(path.dirname(module.filename), '..', 'lib', 'ServeFile.js')).createFileResponseHandler;
+		createFileResponseHandler = require(path.join(path.dirname(module.filename), '../../lib/utils/ServeFile.js')).createFileResponseHandler;
 		done();
 	});
 
@@ -57,19 +57,7 @@ describe('ServeFile', function(){
 	});
 
 	describe('JS file', function(){
-		var source = '';
-
-		before(function(done){
-			fs.readFile(module.filename, {encoding: 'utf-8'}, function(err, data){
-				if (err) {
-					throw err;
-				}
-
-				source = data;
-
-				done();
-			});
-		});
+		var source = fs.readFileSync(module.filename, {encoding: 'utf-8'});
 
 		it('should be ok', function(){
 			assert.ok(source);
@@ -143,7 +131,7 @@ describe('ServeFile', function(){
 		// We already tested full server request and response, so from now on we can test
 		// using simple mocks. Not so many lines shorter, but simpler blocks and logic
 		// (no need for running real server and making real requests).
-		it('should be 1 byte if provided range is invalid (end is lesser than start)', function(done){
+		it('should be 416 Range Not Satisfiable if end is lesser than start', function(done){
 			var byteFirst = 23;
 			var byteLast = 22;
 
@@ -152,14 +140,7 @@ describe('ServeFile', function(){
 			});
 
 			res.on('end', function(){
-				var headers = res._getHeaders();
-				var data = res._getData();
-				assert.ok(headers['Content-Type'], 'Missing Content-Type header');
-				assert.ok(headers['Content-Type'].indexOf('application/javascript') >= 0, 'Wrong MIME type');
-				assert.ok(headers['Content-Range'], 'Missing Content-Range header');
-				assert.ok(headers['Content-Range'].indexOf('bytes '+byteFirst+'-'+byteFirst) === 0);
-				assert.ok(headers['Accept-Ranges'], 'Missing Accept-Ranges header');
-				assert.strictEqual(data, source.substring(byteFirst, byteFirst+1)); // substring is not inclusive
+				assert.strictEqual(res.statusCode, 416);
 				done();
 			});
 
@@ -234,6 +215,66 @@ describe('ServeFile', function(){
 			});
 
 			responseHandler(res, module.filename);
+		});
+		it('should not serve symbolic link if asked not to', function(done){
+			options.followSymbolicLinks = false;
+
+			var res = httpMocks.createResponse({
+				eventEmitter: EventEmitter
+			});
+
+			res.on('end', function(){
+				fs.unlink(linkName, function(err){
+					assert.ifError(err);
+					assert.strictEqual(res.statusCode, 404);
+					done();
+				});
+			});
+
+			var linkName = module.filename + '.symlink-test';
+
+			fs.symlink(module.filename, linkName, function(err){
+				assert.ifError(err);
+				responseHandler(res, linkName);
+			});
+		});
+
+		[
+			// 0: malformed range start
+			// 1: malformed range end
+			// 2: correct range
+			[0, '', '0-'+(source.length - 1)],                     // missing end
+			['e', 1, '0-1'],                                       // invalid start should be treated as 0
+			[0, 'e', '0-0'],                                       // invalid end should be treated as 0
+			[0, 0, '0-0'],                                         // zero start and end should return a single byte
+			[1, 2, '1-2'],                                         // just a single byte
+			[-1, '', (source.length - 1)+'-'+(source.length - 1)], // just a single byte
+			[0, source.length + 100, '0-'+(source.length - 1)]     // more than size should be treated as max available
+		].forEach(function(range){			
+			it('should ignore malformed range and serve correct data for range: "' + range.slice(0, 2).join('-') + '"', function(done){
+				var res = httpMocks.createResponse({
+					eventEmitter: EventEmitter
+				});
+
+				res.on('end', function(){
+					var headers = res._getHeaders();
+					var data = res._getData();
+
+					assert.ok(headers['Content-Type'], 'Missing Content-Type header');
+					assert.ok(headers['Content-Type'].indexOf('application/javascript') >= 0, 'Wrong MIME type');
+					assert.ok(headers['Content-Range'], 'Missing Content-Range header');
+					assert.ok(headers['Content-Range'].indexOf('bytes '+range[2]) === 0, 'Content-Range should be "bytes '+range[2]+'", not "'+headers['Content-Range']+'"');
+					assert.ok(headers['Accept-Ranges'], 'Missing Accept-Ranges header');
+
+					var r = range[2].split('-');
+					assert.strictEqual(source.substring(parseInt(r[0], 10), parseInt(r[1], 10)+1), data, 'Wrong part of data returned'); // substring is not inclusive
+					done();
+				});
+
+				responseHandler(res, module.filename, {
+					'range': 'bytes=' + range.slice(0, 2).join('-')
+				});
+			});
 		});
 	});
 });
