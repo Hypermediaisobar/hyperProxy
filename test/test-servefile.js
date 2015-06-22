@@ -23,7 +23,7 @@ describe('ServeFile', function(){
 	};
 
 	before(function(done){
-		createFileResponseHandler = require(path.join(path.dirname(module.filename), '../../lib/utils/ServeFile.js')).createFileResponseHandler;
+		createFileResponseHandler = require(path.join(path.dirname(module.filename), '../lib/ServeFile.js')).createFileResponseHandler;
 		done();
 	});
 
