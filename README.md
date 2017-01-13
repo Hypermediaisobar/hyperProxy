@@ -230,7 +230,7 @@ This function simply overrides requested file with the one specified in the `dat
 
 ## Testing
 
-Some parts of the module can be run through automated testing with mocha (http://visionmedia.github.io/mocha/). You need to have it installed before running the tests.
+Some parts of the module can be run through automated testing with mocha (http://mochajs.org/). You need to have it installed before running the tests.
 To run all available tests, use following command lines:
 
 ```sh
