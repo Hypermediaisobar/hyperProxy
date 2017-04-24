@@ -235,6 +235,7 @@ To run all available tests, use following command lines:
 
 ```sh
 cd hyperProxy
+npm install node-mocks-http
 mocha
 ```
 

@@ -68,5 +68,8 @@ describe('MIME', function(){
 			type = mime('/non/existant/path/to/example.ttf');
 			assert.strictEqual(type === 'application/font-sfnt' || type === 'application/x-font-ttf', true, 'Type should be either application/font-sfnt or application/x-font-ttf');
 		});
+		it('should return correct generic type for unknown file type', function(){
+			assert.strictEqual(mime('/non/existant/path/to/example.unknown'), 'application/octet-stream');
+		});
 	});
 });

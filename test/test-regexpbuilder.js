@@ -38,7 +38,12 @@ describe('RegExpBuilder', function(){
 				'quux'
 			],
 			expected: '(?:ba[rz]|foo|quux)',
-			antiString: 'zzzzzzz'
+			antiString: [
+				'f',
+				'b',
+				'ba',
+				'fo'
+			]
 		},
 		{
 			strings: [
@@ -57,6 +62,31 @@ describe('RegExpBuilder', function(){
 				'skulls'
 			],
 			expected: 'sk[iu]lls?',
+			antiString: 'zzzzzzz'
+		},
+		{
+			strings: [
+				'bat',
+				'bit',
+				'bip'
+			],
+			expected: 'b(?:at|i[pt])',
+			antiString: 'zzzzzzz'
+		},
+		{
+			strings: [
+				'foo',
+				'foo?'
+			],
+			expected: 'foo(?:\\?)?',
+			antiString: 'zzzzzzz'
+		},
+		{
+			strings: [
+				'foo',
+				'foo★'
+			],
+			expected: 'foo(?:★)?',
 			antiString: 'zzzzzzz'
 		}
 	];
@@ -134,8 +164,20 @@ describe('RegExpBuilder', function(){
 		});
 
 		describe('build quick', function(){
+			beforeEach(function(){
+				builder.reset();
+			});
+
 			it('should build also from strings passed to it ('+tests[0].strings.join()+')', function(){
 				assert.ok(builder.build(tests[0].strings));
+			});
+
+			it('should not ignore empty strings', function(){
+				var r1 = builder.build(['foo', 'foot']);
+				builder.reset();
+				var r2 = builder.build(['foo', '', 'foot']);
+
+				assert.strictEqual(r1 === r2, false);
 			});
 		});
 
@@ -156,7 +198,15 @@ describe('RegExpBuilder', function(){
 				});
 				it('should build regular expression that does not match '+test.antiString, function(){
 					var r = new RegExp('^'+builder.build()+'$');
-					assert.strictEqual(r.test(test.antiString), false);
+
+					if (!Array.isArray(test.antiString)) {
+						assert.strictEqual(r.test(test.antiString), false);
+						return;
+					}
+
+					test.antiString.forEach(function(value){
+						assert.strictEqual(r.test(value), false);
+					});
 				});
 			});
 		};
