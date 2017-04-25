@@ -1,7 +1,7 @@
 hyperProxy
 ==========
 
-A node.js (http://nodejs.org/) local proxy to help front-end developers use local files for debugging or developping production sites.
+A Node.js (http://nodejs.org/) local proxy to help front-end developers use local files for debugging or developing production sites.
 
 **WARNING**: hyperProxy is still in development, so beware :).
 
@@ -12,11 +12,11 @@ From time to time there is a need for a front-end developer to debug an applicat
 Other times there is a project which requires a lot of backend software to run, just to edit and test a single, simple CSS or JS file.
 In both cases front-end developer could use a tool that allows working with local files as if they were on the production website.
 
-While there are great plugins available for various browsers and editors, which allow for dynamic modfication of JavaScript and CSS, they all are browser specific. Usually they work only on one or two of the main three browsers.
+While there are great plugins available for various browsers and editors, which allow for dynamic modification of JavaScript and CSS, they all are browser specific. Usually they work only on one or two of the main three browsers.
 That is why a local proxy may be a better solution. It allows to override only specific files with local copies, and can work for all the web browsers (or any other applications) at the same time.
 One such proxy is an application called Fiddler, which can be really helpful for debugging websites.
 
-Node.js is easy to install on all major platforms and scripts are written in JavaScript, so they should be easy to write by any front-end developer, once they know some basic nodejs functions.
+Node.js is easy to install on all major platforms and scripts are written in JavaScript, so they should be easy to write by any front-end developer, once they know some basic Node.js functions.
 If we create a base or a library that implements most of the stuff and there will be only a simple configuration needed for a developer to start overriding URLs, then there will be almost nothing new to learn to start working. And there still will be an easy way to implement additional functionality, all in JavaScript.
 
 hyperProxy is a proxy that should be easy enough to configure and setup by every front-end developer.
@@ -27,7 +27,7 @@ It also can serve a PAC (Proxy Auto Config) file, which allows browsers to proxy
 
 If you do not have nodejs installed yet, go to the http://nodejs.org/, download and install it.
 
-If you want to make hyperProxy to generate SSL certificates for overriden hosts on-demand, install PEM (https://github.com/andris9/pem) module:
+If you want to make hyperProxy to generate SSL certificates for overridden hosts on-demand, install PEM (https://github.com/andris9/pem) module:
 
 ```javascript
 npm install pem
@@ -61,8 +61,8 @@ var settings = {
 	// 'pacPort': 8002,
 
 	// You may want to provide your own root key and certificates, especially if you have pem module installed
-	// and useSNI is enabled (it is by default) to generate cetificates per-domain.
-	// If you do not set custom key and cert, hyperProxy will try to autogenerate both files
+	// and useSNI is enabled (it is by default) to generate certificates per-domain.
+	// If you do not set custom key and cert, hyperProxy will try to auto-generate both files
 	// in current working directory (the one, from which you are starting your hyperProxy). But that will work only
 	// if you have OpenSSL installed on your system.
 	//
@@ -104,7 +104,7 @@ var overrides = {
 	// This will override all request for minimized jQuery 1.11.0 (on ANY site)
 	// so non-minimized version from local disk will be returned.
 	'jquery': {
-		// Regexp matching URLs that should be overriden.
+		// Regexp matching URLs that should be overridden.
 		'match': new RegExp(/\/(jquery-1.11.0\.min\.(js))$/i),
 		// Callback function that will be called fo overriden URLs.
 		'callback': hyperProxy.overrideWithFilesFromPath,
@@ -256,7 +256,7 @@ jsdoc hyperProxy.js lib/*.js README.md -d documentation -c jsdoc.json
 1. When using CNTLM and node.js 0.10+ requests start to freeze quickly. It worked OK with node.js 0.8+.
    We're probably doing something wrong with handling the streams.
 2. On Windows, PAC does not work well. It's probably because of self-signed certificate and when browser tries to access original
-   files from the target and overriden files from our proxy, it gets two different certificates, which may be a cause of the problem.
+   files from the target and overridden files from our proxy, it gets two different certificates, which may be a cause of the problem.
 3. There may be a problem using hyperProxy and VPN connection together. We have yet to test and debug it more.
 
 
