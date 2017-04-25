@@ -8,6 +8,7 @@ var assert = require('assert');
 var http = require('http');
 var path = require('path');
 var fs = require('fs');
+var os = require('os');
 
 var httpMocks = require('node-mocks-http');
 
@@ -240,6 +241,7 @@ describe('ServeFile', function(){
 					console.warn('Could not create symlink for test purposes: permission denied');
 					if (os.platform() === 'win32') {
 						console.warn('On Windows, regular users cannot create symlinks by default. Only administrators can.');
+						return done();
 					}
 				}
 				assert.ifError(err);
