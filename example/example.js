@@ -14,6 +14,7 @@ var overrides = {
 	'jquery-1.11.0-min': {
 		'match': new RegExp(/\/(jquery-1.11.0\.min\.(js))$/i),
 		'callback': hyperProxy.overrideWithFilesFromPath,
+		'tryNonMinimizedFiles': true,
 		'path': path.join(__dirname, 'js'),
 		'omitCNTLM': true
 	},
