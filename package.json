@@ -1,0 +1,36 @@
+{
+  "name": "hyperproxy",
+  "version": "0.9.0",
+  "description": "A local proxy to help front-end developers use local files for debugging or developing production sites.",
+  "main": "hyperProxy.js",
+  "directories": {
+    "example": "example",
+    "test": "test",
+    "lib": "lib"
+  },
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Hypermediaisobar/hyperProxy.git"
+  },
+  "keywords": [
+    "proxy",
+    "local",
+    "developers"
+  ],
+  "author": "Marcin Konicki",
+  "license": "BSD-3-Clause",
+  "bugs": {
+    "url": "https://github.com/Hypermediaisobar/hyperProxy/issues"
+  },
+  "homepage": "https://github.com/Hypermediaisobar/hyperProxy",
+  "devDependencies": {
+    "mocha": "^3.3.0",
+    "node-mocks-http": "^1.6.1"
+  },
+  "dependencies": {
+    "pem": "^1.9.4"
+  }
+}
