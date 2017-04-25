@@ -4,12 +4,10 @@
  */
 
 var assert = require('assert');
-var path = require('path');
+var RegExpBuilder = require('../lib/RegExpBuilder.js');
 
 describe('RegExpBuilder', function(){
 	'use strict';
-
-	var builder;
 
 	var tests = [
 		{
@@ -94,88 +92,92 @@ describe('RegExpBuilder', function(){
 	// This one should not match any of the above strings.
 	var antiTest = 'zzzzzzzz';
 
-	before(function(done){
-		builder = require(path.join(path.dirname(module.filename), '..', 'lib', 'RegExpBuilder.js'))();
-		done();
-	});
-
 	beforeEach(function(){
-		//builder.reset();
+		this.builder = RegExpBuilder();
 	});
 
 	describe('builder', function(){
 		it('should exist', function(){
-			assert.ok(builder);
+			assert.ok(this.builder);
 		});
 
 		describe('add', function(){
 			it('should exist', function(){
-				assert.ok(builder.add);
+				assert.ok(this.builder.add);
 			});
 			it('should be a function', function(){
-				assert.strictEqual(typeof(builder.add), 'function');
+				assert.strictEqual(typeof(this.builder.add), 'function');
 			});
 			it('should allow to add array of strings ('+tests[0].strings.join()+')', function(){
-				assert.ok(builder.add(tests[0].strings));
+				assert.ok(this.builder.add(tests[0].strings));
 			});
 			it('should not allow to add non-array', function(){
-				assert.strictEqual(builder.add(123), false);
+				assert.strictEqual(this.builder.add(123), false);
 			});
 		});
 
 		describe('build', function(){
+			beforeEach(function(){
+				this.builder.add(tests[0].strings);
+			});
+
 			it('should exist', function(){
-				assert.ok(builder.build);
+				assert.ok(this.builder.build);
 			});
 			it('should be a function', function(){
-				assert.strictEqual(typeof(builder.build), 'function');
+				assert.strictEqual(typeof(this.builder.build), 'function');
 			});
 			it('should build regular expression from previously added strings', function(){
-				assert.ok(builder.build());
+				assert.ok(this.builder.build());
 			});
 			it('should build valid regular expression', function(){
-				assert.doesNotThrow(function(){new RegExp(builder.build());});
+				function temp () {
+					return new RegExp(this.builder.build());
+				}
+				assert.doesNotThrow(temp.bind(this));
 			});
 			it('should build regular expression that matches previously added strings ('+tests[0].strings.join()+')', function(){
-				var r = new RegExp(builder.build());
+				var r = new RegExp(this.builder.build());
 				for (var i = 0; i < tests[0].strings.length; i++) {
 					assert.ok(r.test(tests[0].strings[i]), 'it did not match '+tests[0].strings[i]);
 				}
 			});
 			it('should build regular expression that matches previously added strings ('+tests[0].strings.join()+'), but not '+antiTest, function(){
-				var r = new RegExp(builder.build());
+				var r = new RegExp(this.builder.build());
 				assert.strictEqual(r.test(antiTest), false);
 			});
 		});
 
 		describe('reset', function(){
 			it('should exist', function(){
-				assert.ok(builder.reset);
+				assert.ok(this.builder.reset);
 			});
 			it('should be a function', function(){
-				assert.strictEqual(typeof(builder.reset), 'function');
+				assert.strictEqual(typeof(this.builder.reset), 'function');
 			});
 			it('should be callable', function(){
-				assert.doesNotThrow(builder.reset);
+				assert.doesNotThrow(this.builder.reset);
 			});
 			it('should clear previously added strings', function(){
-				assert.strictEqual(builder.build(), "");
+				this.builder.add(tests[0].strings);
+				this.builder.reset();
+				assert.strictEqual(this.builder.build(), "");
 			});
 		});
 
 		describe('build quick', function(){
 			beforeEach(function(){
-				builder.reset();
+				this.builder.reset();
 			});
 
 			it('should build also from strings passed to it ('+tests[0].strings.join()+')', function(){
-				assert.ok(builder.build(tests[0].strings));
+				assert.ok(this.builder.build(tests[0].strings));
 			});
 
 			it('should not ignore empty strings', function(){
-				var r1 = builder.build(['foo', 'foot']);
-				builder.reset();
-				var r2 = builder.build(['foo', '', 'foot']);
+				var r1 = this.builder.build(['foo', 'foot']);
+				this.builder.reset();
+				var r2 = this.builder.build(['foo', '', 'foot']);
 
 				assert.strictEqual(r1 === r2, false);
 			});
@@ -183,21 +185,17 @@ describe('RegExpBuilder', function(){
 
 		var buildTest = function(test){
 			describe('testing of array('+test.strings.join()+')', function(){
-				before(function(done){
-					builder.reset();
-					done();
-				});
 				it('should build expected regular expression', function(){
-					assert.strictEqual(builder.build(test.strings), test.expected);
+					assert.strictEqual(this.builder.build(test.strings), test.expected);
 				});
 				it('should build regular expression that matches its every item', function(){
-					var r = new RegExp('^'+builder.build()+'$');
+					var r = new RegExp('^'+this.builder.build(test.strings)+'$');
 					test.strings.forEach(function(value){
 						assert.ok(r.test(value));
 					});
 				});
 				it('should build regular expression that does not match '+test.antiString, function(){
-					var r = new RegExp('^'+builder.build()+'$');
+					var r = new RegExp('^'+this.builder.build(test.strings)+'$');
 
 					if (!Array.isArray(test.antiString)) {
 						assert.strictEqual(r.test(test.antiString), false);

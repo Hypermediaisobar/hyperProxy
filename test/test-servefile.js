@@ -8,6 +8,7 @@ var assert = require('assert');
 var http = require('http');
 var path = require('path');
 var fs = require('fs');
+var os = require('os');
 
 var httpMocks = require('node-mocks-http');
 
@@ -23,7 +24,7 @@ describe('ServeFile', function(){
 	};
 
 	before(function(done){
-		createFileResponseHandler = require(path.join(path.dirname(module.filename), '../lib/ServeFile.js')).createFileResponseHandler;
+		createFileResponseHandler = require('../lib/ServeFile.js').createFileResponseHandler;
 		done();
 	});
 
@@ -35,7 +36,7 @@ describe('ServeFile', function(){
 		assert.ok(createFileResponseHandler instanceof Function);
 	});
 
-	it('should return error if secified documentRoot does not exist', function(){
+	it('should return error if specified documentRoot does not exist', function(){
 		responseHandler = createFileResponseHandler({
 			documentRoot: '/unknown/location',
 			followSymbolicLinks: false
@@ -73,9 +74,10 @@ describe('ServeFile', function(){
 					done();
 				});
 				server.on('listening', function(){
+					var address = this.address();
 					http.request({
-						hostname: '127.0.0.1',
-						port: 8000,
+						hostname: address.address,
+						port: address.port,
 						path: '/',
 						method: 'GET'
 					}, function(res){
@@ -85,7 +87,7 @@ describe('ServeFile', function(){
 						});
 					}).end();
 				});
-				server.listen('8000', '127.0.0.1');
+				server.listen(0, '127.0.0.1');
 			};
 			assert.doesNotThrow(f);
 		});
@@ -103,9 +105,10 @@ describe('ServeFile', function(){
 					done();
 				});
 				server.on('listening', function(){
+					var address = this.address();
 					http.request({
-						hostname: '127.0.0.1',
-						port: 8000,
+						hostname: address.address,
+						port: address.port,
 						path: '/',
 						method: 'GET',
 						headers: {
@@ -123,7 +126,7 @@ describe('ServeFile', function(){
 						});
 					}).end();
 				});
-				server.listen('8000', '127.0.0.1');
+				server.listen(0, '127.0.0.1');
 			};
 			assert.doesNotThrow(f);
 		});
@@ -234,6 +237,13 @@ describe('ServeFile', function(){
 			var linkName = module.filename + '.symlink-test';
 
 			fs.symlink(module.filename, linkName, function(err){
+				if (err && err.code === 'EPERM') {
+					console.warn('Could not create symlink for test purposes: permission denied');
+					if (os.platform() === 'win32') {
+						console.warn('On Windows, regular users cannot create symlinks by default. Only administrators can.');
+						return done();
+					}
+				}
 				assert.ifError(err);
 				responseHandler(res, linkName);
 			});
@@ -250,7 +260,7 @@ describe('ServeFile', function(){
 			[1, 2, '1-2'],                                         // just a single byte
 			[-1, '', (source.length - 1)+'-'+(source.length - 1)], // just a single byte
 			[0, source.length + 100, '0-'+(source.length - 1)]     // more than size should be treated as max available
-		].forEach(function(range){			
+		].forEach(function(range){
 			it('should ignore malformed range and serve correct data for range: "' + range.slice(0, 2).join('-') + '"', function(done){
 				var res = httpMocks.createResponse({
 					eventEmitter: EventEmitter

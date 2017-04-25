@@ -11,7 +11,7 @@ var overrides = {
 	// This will override all request for minimized jQuery (on ANY site, ANY version)
 	// so non-minimized version from local disk will be returned.
 	// Try to get http://code.jquery.com/jquery-1.11.0.min.js through the proxy now ;).
-	'any-jquery-min': {
+	'jquery-1.11.0-min': {
 		'match': new RegExp(/\/(jquery-1.11.0\.min\.(js))$/i),
 		'callback': hyperProxy.overrideWithFilesFromPath,
 		'path': path.join(__dirname, 'js'),
@@ -19,7 +19,7 @@ var overrides = {
 	},
 	// Same as above, but for non-versioned file name and
 	// using static output just to show hot it can be used :).
-	'any-jquery': {
+	'any-jquery-min': {
 		'match': new RegExp(/\/jquery(-[\d\.]+)?\.min\.js$/i),
 		'callback': hyperProxy.overrideWithSpecifiedFile,
 		'path': path.join(__dirname, 'js', 'jquery-1.11.0.js'),
