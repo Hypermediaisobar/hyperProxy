@@ -86,6 +86,17 @@ describe('RegExpBuilder', function(){
 			],
 			expected: 'foo(?:★)?',
 			antiString: 'zzzzzzz'
+		},
+		{
+			strings: [
+				'foobar',
+				'foobaz',
+				'foozap',
+				'fooza',
+				'farza'
+			],
+			expected: 'f(?:arza|oo(?:ba[rz]|zap?))',
+			antiString: 'zzzzzzz'
 		}
 	];
 
