@@ -5,5 +5,15 @@
 	"markdown": {
 		"parser": "gfm",
 		"hardwrap": true
-	}
+	},
+	"opts": {
+  	"template": "node_modules/docdash",
+		"encoding": "utf8",
+		"destination": "docs/",
+		"readme": "README.md"
+	},
+	"templates": {
+	  "cleverLinks": false,
+    "monospaceLinks": false
+  }
 }

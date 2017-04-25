@@ -9,7 +9,8 @@
     "lib": "lib"
   },
   "scripts": {
-    "test": "mocha"
+    "test": "mocha",
+    "doc": "jsdoc -c jsdoc.json hyperProxy.js && opener docs/index.html"
   },
   "repository": {
     "type": "git",
@@ -27,8 +28,11 @@
   },
   "homepage": "https://github.com/Hypermediaisobar/hyperProxy",
   "devDependencies": {
+    "docdash": "^0.4.0",
+    "jsdoc": "git+https://github.com/jsdoc3/jsdoc.git",
     "mocha": "^3.3.0",
-    "node-mocks-http": "^1.6.1"
+    "node-mocks-http": "^1.6.1",
+    "opener": "^1.4.3"
   },
   "dependencies": {
     "pem": "^1.9.4"
