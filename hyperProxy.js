@@ -115,9 +115,7 @@ var createFileResponseHandler = require(path.join(path.dirname(module.filename),
  *  @param {Object} overrides
  *  @param {Object} [options]
  */
-function HyperProxy(overrides, options) {
-	'use strict';
-
+function HyperProxy (overrides, options) {
 	if (!(this instanceof HyperProxy)) {
 		return new HyperProxy(overrides, options);
 	}
@@ -125,16 +123,16 @@ function HyperProxy(overrides, options) {
 	/*
 	 *  Convert deprecated options.
 	 */
-	(function(){
+	(function () {
 		var map = {
-			'http_port'          : 'port',
-			'https_port'         : 'httpsPort',
-			'pac_port'           : 'pacPort',
-			'ssl_key'            : 'key',
-			'ssl_cert'           : 'cert',
-			'defaultproxy'       : 'proxy',
-			'defaultproxy.proxy' : 'proxy.hostname',
-			'defaultproxy.port'  : 'proxy.port'
+			'http_port'         : 'port',
+			'https_port'        : 'httpsPort',
+			'pac_port'          : 'pacPort',
+			'ssl_key'           : 'key',
+			'ssl_cert'          : 'cert',
+			'defaultproxy'      : 'proxy',
+			'defaultproxy.proxy': 'proxy.hostname',
+			'defaultproxy.port' : 'proxy.port'
 		};
 
 		var converter = new ObjectConverter();
@@ -147,7 +145,7 @@ function HyperProxy(overrides, options) {
 				continue;
 			}
 
-			console.warn('`options.'+deprecated[i]+'` is deprecated. Use `options.'+map[deprecated[i]]+'` instead.');
+			console.warn('`options.' + deprecated[i] + '` is deprecated. Use `options.' + map[deprecated[i]] + '` instead.');
 		}
 
 		converter.convert(options, options, map);
@@ -175,7 +173,7 @@ function HyperProxy(overrides, options) {
 	/*
 	 *  Setup our JS proxy.
 	 */
-	(function(){
+	(function () {
 		var needWarningAboutRootAndSymLinks = false;
 
 		if (overrides && overrides instanceof Object) {
@@ -192,7 +190,7 @@ function HyperProxy(overrides, options) {
 					if (!options.hasOwnProperty('documentRoot') && !options.hasOwnProperty('followSymbolicLinks')) {
 						needWarningAboutRootAndSymLinks = true;
 					}
-					else if (module.exports.serveFile === module.exports.defaultServeFile) {
+					else if (module.exports.serveFile === defaultServeFile) {
 						initHelperFunctions(options);
 					}
 				}
@@ -211,13 +209,13 @@ function HyperProxy(overrides, options) {
 	 */
 	if (options.pacPort) {
 		this.pacServer = PAC.server(options.pacPort, overrides, options, options.proxy);
-		this.pacServer.server.on('listening', function(){
-			console.log("\nServing PAC file for your web browser(s) on port "+options.pacPort);
-			console.log("\nTo test without possible additional problems with HTTPS certificates, you can start Chrome browser like this:\n\n---\n\t" + 'chrome --proxy-pac-url="http://127.0.0.1:'+options.pacPort+'" --ignore-certificate-errors --user-data-dir=/tmp/random/unique' + "\n---\n\n");
+		this.pacServer.server.on('listening', function () {
+			console.log("\nServing PAC file for your web browser(s) on port " + options.pacPort);
+			console.log("\nTo test without possible additional problems with HTTPS certificates, you can start Chrome browser like this:\n\n---\n\tchrome --proxy-pac-url='http://127.0.0.1:" + options.pacPort + "' --ignore-certificate-errors --user-data-dir=/tmp/random/unique\n---\n\n");
 		});
 	}
 	else {
-		this.addFilter('proxy.pac', function(request, response, reqURL, isItForMe){
+		this.addFilter('proxy.pac', function (request, response, reqURL, isItForMe) {
 			if (!isItForMe || reqURL.path.indexOf('/proxy.pac') !== 0) {
 				return;
 			}
@@ -228,13 +226,13 @@ function HyperProxy(overrides, options) {
 		});
 	}
 
-	this.start(function(){
-		var hasHTTPS = self.httpsServer ? true : false;
-		console.log("\nHTTP"+(hasHTTPS ? "(S)" : "")+" proxy is listening on port "+options.httpPort);
+	this.start(function () {
+		var hasHTTPS = Boolean(self.httpsServer);
+		console.log("\nHTTP" + (hasHTTPS ? "(S)" : "") + " proxy is listening on port " + options.httpPort);
 		if (!options.pacPort) {
-			console.log("\nServing PAC file for your web browser(s) at http://"+(options.hostname ? options.hostname : 'localhost') + ':' + options.httpPort + '/proxy.pac');
+			console.log("\nServing PAC file for your web browser(s) at http://" + (options.hostname ? options.hostname : 'localhost') + ':' + options.httpPort + '/proxy.pac');
 			if (hasHTTPS) {
-				console.log("\nTo test without possible additional problems with HTTPS certificates, you can start Chrome browser like this:\n\n---\n\t" + 'chrome --proxy-pac-url="http://'+(options.hostname ? options.hostname : 'localhost') + ':' + options.httpPort + '/proxy.pac" --ignore-certificate-errors --user-data-dir=/tmp/random/unique' + "\n---\n\n");
+				console.log("\nTo test without possible additional problems with HTTPS certificates, you can start Chrome browser like this:\n\n---\n\tchrome --proxy-pac-url='http://" + (options.hostname ? options.hostname : 'localhost') + ':' + options.httpPort + "/proxy.pac' --ignore-certificate-errors --user-data-dir=/tmp/random/unique\n---\n\n");
 			}
 		}
 	});
@@ -246,29 +244,29 @@ function HyperProxy(overrides, options) {
 util.inherits(HyperProxy, FilteredProxy);
 
 /**
+* File serving function called by other helper functions.
+* @private
+*/
+var serveFile = defaultServeFile;
+
+/**
  * For backward compatibility, prepare quite unsecure defaults for file serving function, and yell to console when it's used for the first time.
  * @private
  */
-var defaultServeFile = function defaultServeFile(res, filePath, reqHeaders){
-	console.warn('hyperProxy.serveFile was not initialized with options passed to `start()` or by setting `hyperProxy.serveFile = hyperProxy.createFileResponseHandler()` before. Initializing now with default root directory set to '+process.cwd()+' and followSymbolicLinks set to true.');
+function defaultServeFile (res, filePath, reqHeaders) {
+	console.warn('hyperProxy.serveFile was not initialized with options passed to `start()` or by setting `hyperProxy.serveFile = hyperProxy.createFileResponseHandler()` before. Initializing now with default root directory set to ' + process.cwd() + ' and followSymbolicLinks set to true.');
 	serveFile = createFileResponseHandler({
-		documentRoot: process.cwd(),
+		documentRoot       : process.cwd(),
 		followSymbolicLinks: true
 	});
 	return serveFile(res, filePath, reqHeaders);
-};
-
-/**
- * File serving function called by other helper functions.
- * @private
- */
-var serveFile = defaultServeFile;
+}
 
 /**
  * Initialize stuff used by helper functions.
  * @private
  */
-function initHelperFunctions(options) {
+function initHelperFunctions (options) {
 	if (options.hasOwnProperty('serveFile') && options.serveFile instanceof Function) {
 		serveFile = options.serveFile;
 	}
@@ -293,9 +291,7 @@ function initHelperFunctions(options) {
  *  @param {Object} post - parsed query from the POST data, e.g., "variable=value" will be passed as "{ variable: value }". Not used.
  *  @returns {boolean}
  */
-function overrideWithFilesFromPath(res, found, data, post){
-	'use strict';
-
+function overrideWithFilesFromPath (res, found, data/* , post*/) {
 	var filename = path.join(data.path, found[1]);
 
 	var filenameUnminified = false;
@@ -323,9 +319,7 @@ function overrideWithFilesFromPath(res, found, data, post){
  *  @param {Object} post - parsed query from the POST data, e.g., "variable=value" will be passed as "{ variable: value }". Not used.
  *  @returns {boolean}
  */
-function overrideWithSpecifiedFile(res, found, data, post){
-	'use strict';
-
+function overrideWithSpecifiedFile (res, found, data/* , post*/) {
 	serveFile(res, data.path, data.headers);
 
 	return true;
@@ -335,11 +329,11 @@ function overrideWithSpecifiedFile(res, found, data, post){
  *  Exports
  */
 module.exports.start = HyperProxy;
-module.exports.overrideJSandCSSgeneric = function(res, found, data, post){
+module.exports.overrideJSandCSSgeneric = function (res, found, data, post) {
 	console.warn('overrideJSandCSSgeneric function name is deprecated. Please use overrideWithFilesFromPath instead.');
 	return overrideWithFilesFromPath(res, found, data, post);
 };
-module.exports.overrideWithStaticOutput = function(res, found, data, post){
+module.exports.overrideWithStaticOutput = function (res, found, data, post) {
 	console.warn('overrideWithStaticOutput function name is deprecated. Please use overrideWithSpecifiedFile instead.');
 	return overrideWithSpecifiedFile(res, found, data, post);
 };
@@ -347,3 +341,4 @@ module.exports.overrideWithFilesFromPath = overrideWithFilesFromPath;
 module.exports.overrideWithSpecifiedFile = overrideWithSpecifiedFile;
 
 module.exports.initHelperFunctions = initHelperFunctions;
+module.exports.serveFile = serveFile;
