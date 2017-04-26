@@ -204,3 +204,14 @@ function overrideJSandCSSonCQ (res, found, data/* , post*/) {
 ---------------------------------------------------------------------------------------------------*/
 
 proxy = hyperProxy.start(overrides, settings);
+
+['SIGHUP', 'SIGINT', 'SIGQUIT', 'SIGILL', 'SIGTRAP', 'SIGABRT',
+	'SIGBUS', 'SIGFPE', 'SIGUSR1', 'SIGSEGV', 'SIGUSR2', 'SIGTERM'].forEach(function (signal) {
+		process.once(signal, function () {
+			console.log('Got ' + signal + ', stopping server...');
+			proxy.stop(function () {
+				console.log('Proxy stopped. Bye!');
+				process.exit(0);
+			});
+		});
+	});
