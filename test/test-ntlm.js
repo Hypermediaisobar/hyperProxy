@@ -6,13 +6,13 @@
  *	available at http://davenport.sourceforge.net/ntlm.html
  */
 
+ /* global describe, it, before, after, beforeEach */
+
 var assert = require('assert');
 var path = require('path');
 var url = require('url');
 
-describe('NTLM', function(){
-	'use strict';
-
+describe('NTLM', function () {
 	var ntlm;
 
 	var PASSWORD = 'SecREt01';
@@ -20,88 +20,88 @@ describe('NTLM', function(){
 	var WORKSTATION = 'WORKSTATION';
 	var USER = 'user';
 
-	it('should exist', function(){
+	it('should exist', function () {
 		var NTLM = require(path.join(path.dirname(module.filename), '..', 'lib', 'NTLM.js'));
 		assert.ok(NTLM);
-		ntlm = NTLM();
+		ntlm = new NTLM();
 		assert.ok(ntlm);
 	});
 
-	it('should create correct UInt64LE buffer', function(){
+	it('should create correct UInt64LE buffer', function () {
 		var correct = '0100000000000000';
 		var hex = ntlm.createUInt64LE(1);
 		assert.strictEqual(hex.toString('hex'), correct);
 	});
 
-	it('should create correct ntlm timestamp', function(){
+	it('should create correct ntlm timestamp', function () {
 		var correct = '0090d336b734c301';
 		var timestamp = ntlm.createTimestamp(1055844000);
 		assert.strictEqual(timestamp.toString('hex'), correct);
 	});
 
-	it('should read correct ntlm timestamp', function(){
+	it('should read correct ntlm timestamp', function () {
 		var correct = 1055844000;
 		var timestamp = ntlm.readTimestamp(new Buffer('0090d336b734c301', 'hex'));
 		assert.strictEqual(timestamp, correct);
 	});
 
-	it('should create random nonce', function(){
+	it('should create random nonce', function () {
 		var zero   = '00000000000000000000000000000000';
 		var nonce1 = ntlm.createNonce();
 		var nonce2 = ntlm.createNonce();
 
-		assert.strictEqual(nonce1.toString('hex') != zero, true, 'First nonce is zero');
-		assert.strictEqual(nonce2.toString('hex') != zero, true, 'Second nonce is zero');
-		assert.strictEqual(nonce1.toString('hex') != nonce2.toString('hex'), true, 'First and second nonce are the same');
+		assert.strictEqual(nonce1.toString('hex') !== zero, true, 'First nonce is zero');
+		assert.strictEqual(nonce2.toString('hex') !== zero, true, 'Second nonce is zero');
+		assert.strictEqual(nonce1.toString('hex') !== nonce2.toString('hex'), true, 'First and second nonce are the same');
 	});
 
-	it('should create valid OSVersion object', function(){
-		var version = ntlm.OSVersion();
+	it('should create valid OSVersion object', function () {
+		var version = new ntlm.OSVersion();
 		assert.ok(version instanceof Object);
 		assert.ok(version.hasOwnProperty('major') && !isNaN(version.major));
 		assert.ok(version.hasOwnProperty('minor') && !isNaN(version.minor));
 		assert.ok(version.hasOwnProperty('build') && !isNaN(version.build));
 	});
 
-	it('should correctly adjust parity in bytes', function(){
+	it('should correctly adjust parity in bytes', function () {
 		var correct = '01070107';
 		var buffer = new Buffer('00060106', 'hex');
 		ntlm.adjustBytesParity(buffer);
 		assert.strictEqual(buffer.toString('hex'), correct);
 	});
 
-	it('should create correct 64bit DES key from 56bit key', function(){
+	it('should create correct 64bit DES key from 56bit key', function () {
 		var correct = '52a2516b252a5161';
 		var key56 = new Buffer('53454352455430', 'hex');
 		var key64 = ntlm.createDESKey(key56);
 		assert.strictEqual(key64.toString('hex'), correct);
 	});
 
-	it('should create correct lm_hash_password', function(){
+	it('should create correct lm_hash_password', function () {
 		var correct = 'ff3750bcc2b22412c2265b23734e0dac';
 		var hash = ntlm.lm_hash_password(PASSWORD);
 		assert.strictEqual(hash.toString('hex'), correct);
 	});
 
-	it('should create zeroed lm_hash_password if password is longer than 15 characters', function(){
+	it('should create zeroed lm_hash_password if password is longer than 15 characters', function () {
 		var correct = '00000000000000000000000000000000';
 		var hash = ntlm.lm_hash_password('01234567890123456');
 		assert.strictEqual(hash.toString('hex'), correct);
 	});
 
-	it('should create correct ntlm_hash_password', function(){
+	it('should create correct ntlm_hash_password', function () {
 		var correct = 'cd06ca7c7e10c99b1d33b7485a2ed808';
 		var hash = ntlm.ntlm_hash_password(PASSWORD);
 		assert.strictEqual(hash.toString('hex'), correct);
 	});
 
-	it('should create correct ntlm2_hash_password', function(){
+	it('should create correct ntlm2_hash_password', function () {
 		var correct = '04b8e0ba74289cc540826bab1dee63ae';
 		var hash = ntlm.ntlm2_hash_password(USER, DOMAIN, PASSWORD);
 		assert.strictEqual(hash.toString('hex'), correct);
 	});
 
-	it('should create valid credentials', function(){
+	it('should create valid credentials', function () {
 		var credentials = ntlm.credentials(USER, DOMAIN, PASSWORD, WORKSTATION);
 		assert.ok(credentials instanceof Object);
 		assert.ok(credentials instanceof ntlm.credentials);
@@ -121,79 +121,78 @@ describe('NTLM', function(){
 		assert.ok(credentials.nonce);
 	});
 
-	it('should read valid flags', function(){
+	it('should read valid flags', function () {
 		var Flags = require(path.join(path.dirname(module.filename), '..', 'lib', 'Flags.js'));
 		// These are the flags used by CNTLM (http://cntlm.sourceforge.net/)
 		var setups = {
 			0xa208b205: {
-				'negotiateUnicode': true,
-				'requestTarget': true,
-				'negotiateNTLM': true,
-				'negotiateDomain': true,
-				'negotiateWorkstation': true,
-				'negotiateAlwaysSign': true,
-				'negotiateNTLM2Key': true,
-				'negotiateVersion': true,
-				'negotiate128': true
+				negotiateUnicode    : true,
+				requestTarget       : true,
+				negotiateNTLM       : true,
+				negotiateDomain     : true,
+				negotiateWorkstation: true,
+				negotiateAlwaysSign : true,
+				negotiateNTLM2Key   : true,
+				negotiateVersion    : true,
+				negotiate128        : true
 			},
 			0xa208b207: {
-				'negotiateUnicode': true,
-				'negotiateOEM': true,
-				'requestTarget': true,
-				'negotiateNTLM': true,
-				'negotiateDomain': true,
-				'negotiateWorkstation': true,
-				'negotiateAlwaysSign': true,
-				'negotiateNTLM2Key': true,
-				'negotiateVersion': true,
-				'negotiate128': true
+				negotiateUnicode    : true,
+				negotiateOEM        : true,
+				requestTarget       : true,
+				negotiateNTLM       : true,
+				negotiateDomain     : true,
+				negotiateWorkstation: true,
+				negotiateAlwaysSign : true,
+				negotiateNTLM2Key   : true,
+				negotiateVersion    : true,
+				negotiate128        : true
 			},
 			0xb207: {
-				'negotiateUnicode': true,
-				'negotiateOEM': true,
-				'requestTarget': true,
-				'negotiateNTLM': true,
-				'negotiateDomain': true,
-				'negotiateWorkstation': true,
-				'negotiateAlwaysSign': true
+				negotiateUnicode    : true,
+				negotiateOEM        : true,
+				requestTarget       : true,
+				negotiateNTLM       : true,
+				negotiateDomain     : true,
+				negotiateWorkstation: true,
+				negotiateAlwaysSign : true
 			},
 			0xb205: {
-				'negotiateUnicode': true,
-				'requestTarget': true,
-				'negotiateNTLM': true,
-				'negotiateDomain': true,
-				'negotiateWorkstation': true,
-				'negotiateAlwaysSign': true
+				negotiateUnicode    : true,
+				requestTarget       : true,
+				negotiateNTLM       : true,
+				negotiateDomain     : true,
+				negotiateWorkstation: true,
+				negotiateAlwaysSign : true
 			},
 			0xb206: {
-				'negotiateOEM': true,
-				'requestTarget': true,
-				'negotiateNTLM': true,
-				'negotiateDomain': true,
-				'negotiateWorkstation': true,
-				'negotiateAlwaysSign': true
+				negotiateOEM        : true,
+				requestTarget       : true,
+				negotiateNTLM       : true,
+				negotiateDomain     : true,
+				negotiateWorkstation: true,
+				negotiateAlwaysSign : true
 			}
 		};
-		Object.keys(setups).forEach(function(setup){
+		Object.keys(setups).forEach(function (setup) {
 			var flags = new Flags(setup, ntlm.FLAGS);
-			/*console.log();
+			/* console.log();
 			console.log('Flags '+flags.toString('hex'));
 			console.log(flags);*/
-			Object.keys(flags).forEach(function(prop){
+			Object.keys(flags).forEach(function (prop) {
 				var v = setups[setup].hasOwnProperty(prop) ? setups[setup][prop] : false;
-				assert.strictEqual(v, flags[prop], 'In '+flags.toString('hex')+' property '+prop+' was incorrect: '+v+' !== '+flags[prop]);
+				assert.strictEqual(v, flags[prop], 'In ' + flags.toString('hex') + ' property ' + prop + ' was incorrect: ' + v + ' !== ' + flags[prop]);
 			});
 		});
 	});
 
-	describe('Messaging', function(){
-
+	describe('Messaging', function () {
 		var credentials;
 		var anonymous;
 		var inputMessage2 = '4e544c4d53535000020000000c000c0030000000010281000123456789abcdef0000000000000000620062003c00000044004f004d00410049004e0002000c0044004f004d00410049004e0001000c005300450052005600450052000400140064006f006d00610069006e002e0063006f006d00030022007300650072007600650072002e0064006f006d00610069006e002e0063006f006d0000000000';
 		var message2 = false;
 
-		before(function(){
+		before(function () {
 			credentials = ntlm.credentials(USER, DOMAIN, PASSWORD, WORKSTATION);
 			credentials.version.major = 5;
 			credentials.version.minor = 0;
@@ -211,11 +210,11 @@ describe('NTLM', function(){
 			anonymous.timestamp = new Buffer('0090d336b734c301', 'hex');
 		});
 
-		beforeEach(function(){
+		beforeEach(function () {
 			credentials.flags.unsetAll();
 		});
 
-		it('should create valid Type1 message', function(){
+		it('should create valid Type1 message', function () {
 			credentials.flags.negotiateUnicode = true;
 			credentials.flags.negotiateOEM = true;
 			credentials.flags.requestTarget = true;
@@ -231,13 +230,13 @@ describe('NTLM', function(){
 			assert.strictEqual(message.toString('hex'), correct);
 		});
 
-		it('should recognize invalid Type2 Message string', function(){
+		it('should recognize invalid Type2 Message string', function () {
 			var base64 = (new Buffer(inputMessage2, 'hex')).toString('base64');
-			assert.strictEqual(ntlm.readType2Message('NT '+base64), false);
-			assert.ok(ntlm.readType2Message('NTLM '+base64) instanceof Object);
+			assert.strictEqual(ntlm.readType2Message('NT ' + base64), false);
+			assert.ok(ntlm.readType2Message('NTLM ' + base64) instanceof Object);
 		});
 
-		it('should recognize invalid Type2 Message string', function(){
+		it('should recognize invalid Type2 Message string', function () {
 			var base64 = (new Buffer(inputMessage2, 'hex')).toString('base64');
 			message2 = ntlm.readType2Message(base64);
 
@@ -255,7 +254,7 @@ describe('NTLM', function(){
 			assert.strictEqual(message2.flags.targetTypeDomain, true, 'Wrong value of targetTypeDomain flag');
 			assert.strictEqual(message2.flags.negotiateTargetInfo, true, 'Wrong value of negotiateTargetInfo flag');
 
-			assert.strictEqual(+message2.flags, 0x00000001 | 0x00000200 | 0x00010000 | 0x00800000, 'Wrong value of flags');
+			assert.strictEqual(Number(message2.flags), 0x00000001 | 0x00000200 | 0x00010000 | 0x00800000, 'Wrong value of flags');
 
 			assert.strictEqual(message2.challenge.toString('hex'), '0123456789abcdef', 'Wrong challenge');
 			assert.strictEqual(message2.context.toString('hex'), '0000000000000000', 'Wrong context');
@@ -276,7 +275,7 @@ describe('NTLM', function(){
 			assert.strictEqual(message2.targetInfo.dnsDomainName.toString('ucs2'), 'domain.com', 'Wrong server name');
 		});
 
-		it('should create valid Type2 message', function(){
+		it('should create valid Type2 message', function () {
 			var correct = ntlm.readType2Message(new Buffer(inputMessage2, 'hex'));
 
 			var message2 = ntlm.readType2Message(ntlm.createType2Message(correct.targetName.toString('ucs2'), correct.flags, correct.challenge, correct.context, correct.targetInfo, correct.version));
@@ -299,7 +298,7 @@ describe('NTLM', function(){
 			}
 		});
 
-		it('should create correct LM response', function(){
+		it('should create correct LM response', function () {
 			var response = ntlm.lm_response(message2, credentials);
 
 			var correct = 'c337cd5cbd44fc9782a667af6d427c6de67c20c2d3e77c56';
@@ -309,7 +308,7 @@ describe('NTLM', function(){
 			assert.strictEqual(credentials.sessionKey.toString('hex'), correct, 'Session Key is incorrect');
 		});
 
-		it('should create correct Anonymous LM response', function(){
+		it('should create correct Anonymous LM response', function () {
 			var response = ntlm.lm_response(message2, anonymous);
 
 			var correct = '00';
@@ -319,7 +318,7 @@ describe('NTLM', function(){
 			assert.strictEqual(anonymous.sessionKey.toString('hex'), correct, 'Session Key is incorrect');
 		});
 
-		it('should create correct NTLM response', function(){
+		it('should create correct NTLM response', function () {
 			var response = ntlm.ntlm_response(message2, credentials);
 
 			var correct = '25a98c1c31e81847466b29b2df4680f39958fb8c213a9cc6';
@@ -329,7 +328,7 @@ describe('NTLM', function(){
 			assert.strictEqual(credentials.sessionKey.toString('hex'), correct, 'Session Key is incorrect');
 		});
 
-		it('should create correct Anonymous NTLM response', function(){
+		it('should create correct Anonymous NTLM response', function () {
 			var response = ntlm.ntlm_response(message2, anonymous);
 
 			var correct = '';
@@ -339,7 +338,7 @@ describe('NTLM', function(){
 			assert.strictEqual(anonymous.sessionKey.toString('hex'), correct, 'Session Key is incorrect');
 		});
 
-		it('should create correct LM2 response', function(){
+		it('should create correct LM2 response', function () {
 			var response = ntlm.lm2_response(message2, credentials);
 
 			var correct = 'd6e6152ea25d03b7c6ba6629c2d6aaf0ffffff0011223344';
@@ -349,7 +348,7 @@ describe('NTLM', function(){
 			assert.strictEqual(credentials.sessionKey.toString('hex'), correct, 'Session Key is incorrect');
 		});
 
-		it('should create correct Anonymous LM2 response', function(){
+		it('should create correct Anonymous LM2 response', function () {
 			var response = ntlm.lm2_response(message2, anonymous);
 
 			var correct = '00';
@@ -359,7 +358,7 @@ describe('NTLM', function(){
 			assert.strictEqual(anonymous.sessionKey.toString('hex'), correct, 'Session Key is incorrect');
 		});
 
-		it('should create correct NTLM2 response', function(){
+		it('should create correct NTLM2 response', function () {
 			var response = ntlm.ntlm2_response(message2, credentials);
 
 			var correct = 'cbabbca713eb795d04c97abc01ee498301010000000000000090d336b734c301ffffff00112233440000000002000c0044004f004d00410049004e0001000c005300450052005600450052000400140064006f006d00610069006e002e0063006f006d00030022007300650072007600650072002e0064006f006d00610069006e002e0063006f006d000000000000000000';
@@ -369,7 +368,7 @@ describe('NTLM', function(){
 			assert.strictEqual(credentials.sessionKey.toString('hex'), correct, 'Session Key is incorrect');
 		});
 
-		it('should create correct Anonymous NTLM2 response', function(){
+		it('should create correct Anonymous NTLM2 response', function () {
 			var response = ntlm.ntlm2_response(message2, anonymous);
 
 			var correct = '';
@@ -379,7 +378,7 @@ describe('NTLM', function(){
 			assert.strictEqual(anonymous.sessionKey.toString('hex'), correct, 'Session Key is incorrect');
 		});
 
-		it('should create correct NTLM session response', function(){
+		it('should create correct NTLM session response', function () {
 			var response = ntlm.ntlm_sr_response(message2, credentials);
 
 			var correct = 'ffffff001122334400000000000000000000000000000000';
@@ -392,7 +391,7 @@ describe('NTLM', function(){
 			assert.strictEqual(credentials.sessionKey.toString('hex'), correct, 'Session Key is incorrect');
 		});
 
-		it('should create correct Anonymous NTLM session response', function(){
+		it('should create correct Anonymous NTLM session response', function () {
 			var response = ntlm.ntlm_sr_response(message2, anonymous);
 
 			var correct = '00';
@@ -402,7 +401,7 @@ describe('NTLM', function(){
 			assert.strictEqual(response.ntlm.toString('hex'), correct, 'Wrong NTLM response');
 		});
 
-		it('should create correct Anonymous session response', function(){
+		it('should create correct Anonymous session response', function () {
 			var response = ntlm.anonymous_response(message2, credentials);
 
 			var correct = '00';
@@ -415,7 +414,7 @@ describe('NTLM', function(){
 			assert.strictEqual(anonymous.sessionKey.toString('hex'), correct, 'Session Key is incorrect');
 		});
 
-		it('should create correct NTLM Type3 message', function(){
+		it('should create correct NTLM Type3 message', function () {
 			credentials.flags.negotiateUnicode = true;
 			credentials.flags.negotiateOEM = true;
 			credentials.flags.requestTarget = true;
@@ -423,7 +422,7 @@ describe('NTLM', function(){
 			credentials.flags.negotiateDomain = true;
 			credentials.flags.negotiateWorkstation = true;
 
-			var flags = +message2.flags;
+			// var flags = Number(message2.flags);
 			message2.flags.unsetAll();
 			message2.flags.negotiateNTLM = true;
 			message2.flags.negotiateUnicode = true;
@@ -436,21 +435,21 @@ describe('NTLM', function(){
 			assert.strictEqual(message3.toString('hex'), correct);
 		});
 
-		it('should create correct LM session key', function(){
+		it('should create correct LM session key', function () {
 			var key = ntlm.lm_session_key(credentials);
 
 			var correct = 'ff3750bcc2b224120000000000000000';
 			assert.strictEqual(key.toString('hex'), correct);
 		});
 
-		it('should create correct NTLM session key', function(){
+		it('should create correct NTLM session key', function () {
 			var key = ntlm.ntlm_session_key(credentials);
 
 			var correct = '3f373ea8e4af954f14faa506f8eebdc4';
 			assert.strictEqual(key.toString('hex'), correct);
 		});
 
-		it('should create correct Lan Manager session key', function(){
+		it('should create correct Lan Manager session key', function () {
 			var lm_response = ntlm.lm_response(message2, credentials);
 
 			var correct = 'c337cd5cbd44fc9782a667af6d427c6de67c20c2d3e77c56';
@@ -462,7 +461,7 @@ describe('NTLM', function(){
 			assert.strictEqual(lan_manager_key.toString('hex'), correct, 'Wrong Lan Manager Session Key');
 		});
 
-		it('should create correct RC-4 encrypted randomSessionKey', function(){
+		it('should create correct RC-4 encrypted randomSessionKey', function () {
 			credentials.randomSessionKey = new Buffer('f0f0aabb00112233445566778899aabb', 'hex');
 
 			var lm_response = ntlm.lm_response(message2, credentials);
@@ -471,7 +470,8 @@ describe('NTLM', function(){
 			var correct = 'e41873887ad8201aae335ca33451ccfa';
 			assert.strictEqual(ntlm.master_session_key(credentials).toString('hex'), correct, 'Wrong when using LM session key');
 
-			var ntlm_response = ntlm.ntlm_response(message2, credentials);
+			// var ntlm_response = ntlm.ntlm_response(message2, credentials);
+			ntlm.ntlm_response(message2, credentials);
 			credentials.currentKey = credentials.sessionKey;
 
 			correct = '1d3355eb71c82850a9a2d65c2952e6f3';
@@ -485,7 +485,7 @@ describe('NTLM', function(){
 		});
 	});
 
-	describe('HTTP Proxy Authentication with fake NTLM server', function(){
+	describe('HTTP Proxy Authentication with fake NTLM server', function () {
 		var serverPort = 8085;
 		var proxyPort = 8086;
 		var text = 'YES';
@@ -499,51 +499,51 @@ describe('NTLM', function(){
 
 		var credentials;
 
-		before(function(done){
-			credentials = new ntlm.credentials(USER, DOMAIN, PASSWORD, WORKSTATION);
+		before(function (done) {
+			credentials = ntlm.credentials(USER, DOMAIN, PASSWORD, WORKSTATION);
 
-			var ready = (function(todo, callback){
+			var ready = (function (todo, callback) {
 				var readyCount = 0;
-				return function(){
+				return function () {
 					readyCount++;
-					if (todo == readyCount) {
+					if (todo === readyCount) {
 						callback();
 					}
 				};
 			})(2, done);
 
-			server = http.createServer(function(req, res){
+			server = http.createServer(function (req, res) {
 				res.writeHead(200, {
-					'Content-Type': 'text/plain;charset=UTF8',
+					'Content-Type'  : 'text/plain;charset=UTF8',
 					'Content-Length': text.length,
-					'Date': (new Date()).toUTCString(),
-					'Connection': 'close'
+					'Date'          : (new Date()).toUTCString(),
+					'Connection'    : 'close'
 				});
 				res.end(text);
 			});
-			server.on('listening', function(){
+			server.on('listening', function () {
 				serverPort = this.address().port;
 				ready();
 			});
 			server.listen(serverPort, '127.0.0.1');
 
 			var NTLMProxy = require(path.join(path.dirname(module.filename), 'support', 'NTLMProxy.js'));
-			proxy = new NTLMProxy(proxyOptions, function(username, domain, workstation){
-				return new ntlm.credentials(username, domain, PASSWORD, workstation);
+			proxy = new NTLMProxy(proxyOptions, function (username, domain, workstation) {
+				return ntlm.credentials(username, domain, PASSWORD, workstation);
 			});
-			proxy.on('listening', function(){
+			proxy.on('listening', function () {
 				proxyPort = this.address().port;
 				ready();
 			});
 			proxy.listen(proxyPort, '127.0.0.1');
 		});
 
-		after(function(done){
-			var ready = (function(todo, callback){
+		after(function (done) {
+			var ready = (function (todo, callback) {
 				var readyCount = 0;
-				return function(){
+				return function () {
 					readyCount++;
-					if (todo == readyCount) {
+					if (todo === readyCount) {
 						callback();
 					}
 				};
@@ -556,62 +556,61 @@ describe('NTLM', function(){
 			proxy.close();
 		});
 
-		it('should work', function(done){
+		it('should work', function (done) {
 			ntlm.securityLevel = 4;
 			var message1 = ntlm.createType1Message(credentials);
+			var sock = null;
 
-			var onResponse = function(res){
-				var message2 = ntlm.readType2Message(res.headers['proxy-authenticate']);
-				assert.ok(message2, 'Could not read message2 from server');
-
-				var message3 = ntlm.createType3Message(message2, credentials);
-				var req = http.request({
-					'host': '127.0.0.1',
-					'port': proxyPort,
-					'path': 'http://127.0.0.1:' + serverPort + '/hello.txt',
-					'headers': {
-						'Proxy-Authorization': 'NTLM ' + message3.toString('base64')
-					},
-					'agent': null,
-					'createConnection': function(){
-						sock.ntlmReused = true;
-						return sock;
-					}
-				}, onResponse2).on('socket', function(socket){
-					sock = socket;
-				}).end();
-			};
-
-			var onResponse2 = function(res){
+			var onResponse2 = function (res) {
 				var data = '';
 
 				res.setEncoding('utf8');
-				res.on('data', function(chunk){
+				res.on('data', function (chunk) {
 					data += chunk;
 				});
 
-				res.on('end', function(){
+				res.on('end', function () {
 					assert.strictEqual(data, text);
 					done();
 				});
 			};
 
-			var sock = null;
+			var onResponse = function (res) {
+				var message2 = ntlm.readType2Message(res.headers['proxy-authenticate']);
+				assert.ok(message2, 'Could not read message2 from server');
 
-			var req = http.request({
-				'host': '127.0.0.1',
-				'port': proxyPort,
-				'path': 'http://127.0.0.1:' + serverPort + '/hello.txt',
-				'headers': {
+				var message3 = ntlm.createType3Message(message2, credentials);
+				http.request({
+					host   : '127.0.0.1',
+					port   : proxyPort,
+					path   : 'http://127.0.0.1:' + serverPort + '/hello.txt',
+					headers: {
+						'Proxy-Authorization': 'NTLM ' + message3.toString('base64')
+					},
+					agent           : null,
+					createConnection: function () {
+						sock.ntlmReused = true;
+						return sock;
+					}
+				}, onResponse2).on('socket', function (socket) {
+					sock = socket;
+				}).end();
+			};
+
+			http.request({
+				host   : '127.0.0.1',
+				port   : proxyPort,
+				path   : 'http://127.0.0.1:' + serverPort + '/hello.txt',
+				headers: {
 					'Proxy-Authorization': 'NTLM ' + message1.toString('base64')
 				}
-			}, onResponse).on('socket', function(socket){
+			}, onResponse).on('socket', function (socket) {
 				sock = socket;
 			}).end();
 		});
 	});
 
-	describe('HTTP Proxy Authentication with real NTLM server', function(){
+	describe('HTTP Proxy Authentication with real NTLM server', function () {
 		// ENTER YOUR REAL CREDENTIALS AND PROXY SERVER ADDRESS HERE
 		var user = process.env.NTLM_USER || '';
 		var domain = process.env.NTLM_DOMAIN || '';
@@ -623,7 +622,7 @@ describe('NTLM', function(){
 		var credentials;
 		var message1;
 
-		beforeEach(function(){
+		beforeEach(function () {
 			assert.ok(user, 'Real user name is required for this test. Set environment variable NTLM_USER or enter it directly into test file.');
 			assert.ok(domain, 'Real domain name is required for this test. Set environment variable NTLM_DOMAIN or enter it directly into test file.');
 			assert.ok(password, 'Real user password is required for this test. Set environment variable NTLM_PASS or enter it directly into test file.');
@@ -631,22 +630,22 @@ describe('NTLM', function(){
 
 			this.timeout(3000);
 
-			credentials = new ntlm.credentials(user, domain, password);
+			credentials = ntlm.credentials(user, domain, password);
 
 			ntlm.securityLevel = 4;
 			message1 = ntlm.createType1Message(credentials);
 		});
 
-		it('should work using NET module', function(done){
+		it('should work using NET module', function (done) {
 			var headers = '';
 			var stage = 1;
 
 			var net = require('net');
-			var client = net.connect({host: proxy[0], port: proxy[1] || 3128}, function(){
+			var client = net.connect({host: proxy[0], port: proxy[1] || 3128}, function () {
 				stage = 1;
-				client.write("HEAD "+targetUrl.href+" HTTP/1.1\r\nHost: "+targetUrl.host+"\r\nConnection: Keep-Alive\r\nProxy-Connection: Keep-Alive\r\nProxy-Authorization: NTLM "+message1.toString('base64')+"\r\n\r\n");
+				client.write("HEAD " + targetUrl.href + " HTTP/1.1\r\nHost: " + targetUrl.host + "\r\nConnection: Keep-Alive\r\nProxy-Connection: Keep-Alive\r\nProxy-Authorization: NTLM " + message1.toString('base64') + "\r\n\r\n");
 			});
-			client.on('data', function(data){
+			client.on('data', function (data) {
 				if (stage === 1) {
 					headers += data.toString();
 					if (!headers.match(/\r\n\r\n/)) {
@@ -666,7 +665,7 @@ describe('NTLM', function(){
 					stage = 2;
 					headers = '';
 
-					client.write("GET "+targetUrl.href+" HTTP/1.1\r\nHost: "+targetUrl.host+"\r\nConnection: close\r\nProxy-Authorization: NTLM "+message3.toString('base64')+"\r\n\r\n");
+					client.write("GET " + targetUrl.href + " HTTP/1.1\r\nHost: " + targetUrl.host + "\r\nConnection: close\r\nProxy-Authorization: NTLM " + message3.toString('base64') + "\r\n\r\n");
 				}
 				else if (stage === 2) {
 					headers += data.toString();
@@ -675,82 +674,81 @@ describe('NTLM', function(){
 					}
 
 					var code = headers.match(/HTTP\/1\.\d\s+(\d+)/);
-					assert.ok(code[1] != 407, 'Looks like NTLM authentication failed.');
+					assert.ok(code[1] !== 407, 'Looks like NTLM authentication failed.');
 
 					client.end();
 				}
 				else {
-					assert('Unknown stage: '+stage);
+					assert('Unknown stage: ' + stage);
 				}
-
 			});
-			client.on('end', function(){
+			client.on('end', function () {
 				done();
 			});
 			client.setKeepAlive(true);
 		});
 
-		it('should work using HTTP module', function(done){
-			var onResponse = function(res){
-				var message2 = ntlm.readType2Message(res.headers['proxy-authenticate']);
-				assert.ok(message2, 'Could not read message2 from server');
+		it('should work using HTTP module', function (done) {
+			var sock = null;
+			var net = require('net');
+			var http = require('http');
 
-				var message3 = ntlm.createType3Message(message2, credentials);
-				res.on('data', function(){});
-				res.on('end', function(){
-					http.request({
-						'host': proxy[0],
-						'port': proxy[1] || 3128,
-						'path': targetUrl.href,
-						'headers': {
-							'Host': targetUrl.host,
-							'Proxy-Connection': 'Close',
-							'Proxy-Authorization': 'NTLM ' + message3.toString('base64')
-						},
-						'agent': null,
-						'createConnection': function(){
-							sock.ntlmReused = true;
-							return sock;
-						}
-					}, onResponse2).on('socket', function(socket){
-						sock = socket;
-					}).end();
-				});
-			};
-
-			var onResponse2 = function(res){
+			var onResponse2 = function (res) {
 				var data = '';
 				assert.strictEqual(res.statusCode, 200, 'Response status code should be 200');
 
 				res.setEncoding('utf8');
-				res.on('data', function(chunk){
+				res.on('data', function (chunk) {
 					data += chunk;
 				});
 
-				res.on('end', function(){
+				res.on('end', function () {
 					assert.ok(data.indexOf('<title>Node.js</title>') !== -1, 'HTML title not found');
 					done();
 				});
 			};
 
-			var sock = null;
+			var onResponse = function (res) {
+				var message2 = ntlm.readType2Message(res.headers['proxy-authenticate']);
+				assert.ok(message2, 'Could not read message2 from server');
 
-			var net = require('net');
-			var http = require('http');
-			var req = http.request({
-				'host': proxy[0],
-				'port': proxy[1] || 3128,
-				'path': targetUrl.href,
-				'headers': {
-					'Host': targetUrl.host,
-					'Proxy-Connection': 'Keep-Alive',
+				var message3 = ntlm.createType3Message(message2, credentials);
+				res.on('data', function () {});
+				res.on('end', function () {
+					http.request({
+						host   : proxy[0],
+						port   : proxy[1] || 3128,
+						path   : targetUrl.href,
+						headers: {
+							'Host'               : targetUrl.host,
+							'Proxy-Connection'   : 'Close',
+							'Proxy-Authorization': 'NTLM ' + message3.toString('base64')
+						},
+						agent           : null,
+						createConnection: function () {
+							sock.ntlmReused = true;
+							return sock;
+						}
+					}, onResponse2).on('socket', function (socket) {
+						sock = socket;
+					}).end();
+				});
+			};
+
+			http.request({
+				host   : proxy[0],
+				port   : proxy[1] || 3128,
+				path   : targetUrl.href,
+				headers: {
+					'Host'               : targetUrl.host,
+					'Proxy-Connection'   : 'Keep-Alive',
 					'Proxy-Authorization': 'NTLM ' + message1.toString('base64')
 				},
-				'agent': null,
-				'createConnection': function(){
+				agent           : null,
+				createConnection: function () {
 					return net.connect({host: proxy[0], port: proxy[1] || 3128});
 				}
-			}, onResponse).on('socket', function(socket){
+			}, onResponse).on('socket', function (socket) {
 				sock = socket;
 			}).end();
 		});

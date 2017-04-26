@@ -13,28 +13,26 @@ var Flags = require(path.join(path.dirname(module.filename), '..', '..', 'lib', 
  * @param {Object} options
  * @param {Function} getUserCredentialsCallback
  */
-var NTLMProxy = function(options, getUserCredentialsCallback){
-	'use strict';
-
+var NTLMProxy = function (options, getUserCredentialsCallback) {
 	if (!(this instanceof NTLMProxy)) {
 		return new NTLMProxy(options, getUserCredentialsCallback);
 	}
 
-	options               = options               || {};
-	options.domainName    = options.domainName    || 'hyperProxy';
+	options = options || {};
+	options.domainName = options.domainName || 'hyperProxy';
 	options.enableConnect = options.enableConnect || false;
 
 	var self = http.createServer();
 	var ntlm = new NTLM();
 
-	var _respond = function(res, statusCode, headers, text) {
+	var _respond = function (res, statusCode, headers, text) {
 		if (res instanceof http.ServerResponse) {
 			res.writeHead(407, headers);
 			res.end(text);
 		}
 		else {
 			var output = 'HTTP/1.1 407 Proxy Authentication Required\r\n';
-			Object.keys(headers).forEach(function(key){
+			Object.keys(headers).forEach(function (key) {
 				output += key + ': ' + headers[key] + '\r\n';
 			});
 			output += '\r\n' + (text || '');
@@ -42,13 +40,13 @@ var NTLMProxy = function(options, getUserCredentialsCallback){
 		}
 	};
 
-	var respondUnauthorized = function(req, res) {
+	var respondUnauthorized = function (req, res) {
 		var headers = {
-			'Content-Type': 'text/plain; charset=UTF8',
-			'Content-Length': 0,
-			'Date': (new Date()).toUTCString(),
-			'Connection': 'close',
-			'Proxy-Connection': 'close',
+			'Content-Type'      : 'text/plain; charset=UTF8',
+			'Content-Length'    : 0,
+			'Date'              : (new Date()).toUTCString(),
+			'Connection'        : 'close',
+			'Proxy-Connection'  : 'close',
 			'Proxy-Authenticate': 'NTLM'
 		};
 
@@ -59,21 +57,21 @@ var NTLMProxy = function(options, getUserCredentialsCallback){
 		}
 	};
 
-	var respondWithMessage = function(req, res, message) {
+	var respondWithMessage = function (req, res, message) {
 		var text = 'Proxy Authentication Required';
 		var headers = {
-			'Content-Type': 'text/plain; charset=UTF8',
-			'Content-Length': text.length,
-			'Date': (new Date()).toUTCString(),
-			'Connection': 'Keep-Alive',
-			'Proxy-Connection': 'Keep-Alive',
-			'Proxy-Authenticate': 'NTLM '+message.toString('base64')
+			'Content-Type'      : 'text/plain; charset=UTF8',
+			'Content-Length'    : text.length,
+			'Date'              : (new Date()).toUTCString(),
+			'Connection'        : 'Keep-Alive',
+			'Proxy-Connection'  : 'Keep-Alive',
+			'Proxy-Authenticate': 'NTLM ' + message.toString('base64')
 		};
 
 		_respond(res, 407, headers, text);
 	};
 
-	var tunnelRequest = function(request, response, data) {
+	var tunnelRequest = function (request, response, data) {
 		var reqURL = url.parse(request.url, false, true);
 		reqURL.protocol = reqURL.protocol || (request.connection.encrypted ? 'https:' : 'http:');
 		reqURL.host = reqURL.host || ''; // Ugly: Just to allow splitting in next two lines.
@@ -85,19 +83,19 @@ var NTLMProxy = function(options, getUserCredentialsCallback){
 		reqURL.href = url.format(reqURL);
 
 		var reqOptions = {
-			host: reqURL.hostname,
-			port: reqURL.port,
-			path: reqURL.path,
+			host   : reqURL.hostname,
+			port   : reqURL.port,
+			path   : reqURL.path,
 			headers: request.headers,
-			method: request.method
+			method : request.method
 		};
 
-		var destination = http.request(reqOptions, function(source){
-			source.on('close', function(){
+		var destination = http.request(reqOptions, function (source) {
+			source.on('close', function () {
 				source.connection.end();
 			});
 
-			source.on('error', function(error){
+			source.on('error', function (error) {
 				self.emit('error', error, {hostname: reqURL.hostname, state: 'sourceError'});
 			});
 
@@ -105,7 +103,7 @@ var NTLMProxy = function(options, getUserCredentialsCallback){
 			source.pipe(response);
 		});
 
-		destination.on('error', function(error){
+		destination.on('error', function (error) {
 			self.emit('error', error, {hostname: reqURL.hostname, state: 'destinationError'});
 			response.end();
 		});
@@ -116,21 +114,19 @@ var NTLMProxy = function(options, getUserCredentialsCallback){
 
 		request.pipe(destination);
 
-		request.on('close', function(){
+		request.on('close', function () {
 			if (destination.connection) {
 				destination.connection.end();
 			}
 		});
 
-		request.on('error', function(error){
+		request.on('error', function (error) {
 			response.end();
 			self.emit('error', error, {hostname: reqURL.hostname, state: 'requestError'});
 		});
 	};
 
-	var authorizeRequest = function(req, res, head) {
-		var text = '';
-
+	var authorizeRequest = function (req, res, head) {
 		if (!req.headers.hasOwnProperty('proxy-authorization')) {
 			return respondUnauthorized(req, res);
 		}
@@ -143,10 +139,10 @@ var NTLMProxy = function(options, getUserCredentialsCallback){
 			}
 
 			var message2 = ntlm.createType2Message(options.domainName, new Flags(ntlm.FLAGS.negotiateUnicode | ntlm.FLAGS.targetTypeDomain | ntlm.FLAGS.negotiateNTLM | ntlm.FLAGS.negotiateTargetInfo, ntlm.FLAGS), new Buffer('0123456789abcdef', 'hex'), null, {
-				computerName: new Buffer('test', 'utf8').toString('ucs2'),
-				domainName: new Buffer(options.domainName, 'utf8').toString('ucs2'),
+				computerName   : new Buffer('test', 'utf8').toString('ucs2'),
+				domainName     : new Buffer(options.domainName, 'utf8').toString('ucs2'),
 				dnsComputerName: new Buffer('test.hyperProxy.fake', 'utf8').toString('ucs2'),
-				dnsDomainName: new Buffer('hyperProxy.fake', 'utf8').toString('ucs2')
+				dnsDomainName  : new Buffer('hyperProxy.fake', 'utf8').toString('ucs2')
 			});
 
 			req.connection.ntlmState = {
@@ -180,11 +176,11 @@ var NTLMProxy = function(options, getUserCredentialsCallback){
 		tunnelRequest(req, res, head);
 	};
 
-	self.on('connection', function(socket){
+	self.on('connection', function (socket) {
 		socket.ntlmState = false;
 	});
 
-	self.on('connect', function(req, socket, head){
+	self.on('connect', function (req, socket, head) {
 		if (!options.enableConnect) {
 			socket.write('HTTP/1.1 405 Method Not Allowed\r\nConnection: close\r\nProxy-Connection: close\r\n\r\n');
 			return socket.end();

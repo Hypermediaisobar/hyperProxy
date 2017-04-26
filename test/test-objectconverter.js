@@ -3,30 +3,30 @@
  *	http://visionmedia.github.io/mocha/
  */
 
+ /* global describe, it, before */
+
 var assert = require('assert');
 var path = require('path');
 
-describe('ObjectConverter', function(){
-	'use strict';
-
+describe('ObjectConverter', function () {
 	var self = this;
 
-	before(function(){
+	before(function () {
 		self.Converter = require(path.join(path.dirname(module.filename), '..', 'lib', 'ObjectConverter.js'));
 	});
 
-	it('should exist', function(){
+	it('should exist', function () {
 		assert.ok(self.Converter);
 	});
 
-	it('should initialize', function(){
+	it('should initialize', function () {
 		self.converter = new self.Converter();
 		assert.ok(self.converter);
 	});
 
-	it('should find simple value', function(){
+	it('should find simple value', function () {
 		var from = {
-			'input': 'hello!'
+			input: 'hello!'
 		};
 
 		var pointer = self.converter.find('input', from);
@@ -34,9 +34,9 @@ describe('ObjectConverter', function(){
 		assert.strictEqual(pointer[1], 'input');
 	});
 
-	it('should find object value', function(){
+	it('should find object value', function () {
 		var from = {
-			'first': {'input': 'hello!'}
+			first: {input: 'hello!'}
 		};
 
 		var pointer = self.converter.find('first', from);
@@ -44,10 +44,10 @@ describe('ObjectConverter', function(){
 		assert.strictEqual(pointer[1], 'first');
 	});
 
-	it('should find simple value of object value', function(){
+	it('should find simple value of object value', function () {
 		var from = {
-			'first': {
-				'input': 'hello!'
+			first: {
+				input: 'hello!'
 			}
 		};
 
@@ -56,10 +56,10 @@ describe('ObjectConverter', function(){
 		assert.strictEqual(pointer[1], 'input');
 	});
 
-	it('should find object value of object value', function(){
+	it('should find object value of object value', function () {
 		var from = {
-			'first': {
-				'second': {'input': 'hello!'}
+			first: {
+				second: {input: 'hello!'}
 			}
 		};
 
@@ -68,7 +68,7 @@ describe('ObjectConverter', function(){
 		assert.strictEqual(pointer[1], 'second');
 	});
 
-	it('should create value of object if needed', function(){
+	it('should create value of object if needed', function () {
 		var to = {};
 
 		var pointer = self.converter.find('first.second', to, true);
@@ -77,7 +77,7 @@ describe('ObjectConverter', function(){
 		assert.strictEqual(pointer[1], 'second');
 	});
 
-	it('should remove value of target object if needed', function(){
+	it('should remove value of target object if needed', function () {
 		var map = {
 			first: null
 		};
@@ -90,15 +90,15 @@ describe('ObjectConverter', function(){
 		assert.ok(!to.hasOwnProperty('first'), 'first level was not removed');
 	});
 
-	it('should convert source into target using a map', function(){
+	it('should convert source into target using a map', function () {
 		var map = {
-			'first': 'one',
-			'second': 'two',
+			'first'       : 'one',
+			'second'      : 'two',
 			'second.third': 'two.three',
-			'missing': 'shouldNotBeThere'
+			'missing'     : 'shouldNotBeThere'
 		};
 		var from = {
-			first: 1,
+			first : 1,
 			second: {
 				third: '3'
 			}
