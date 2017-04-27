@@ -25,7 +25,7 @@ It also can serve a PAC (Proxy Auto Config) file, which allows browsers to proxy
 
 ## Installation
 
-If you do not have nodejs installed yet, go to the http://nodejs.org/, download and install it.
+If you do not have Node.js installed yet, go to the http://nodejs.org/, download and install it.
 
 If you want to make hyperProxy to generate SSL certificates for overridden hosts on-demand, install PEM (https://github.com/andris9/pem) module:
 
@@ -128,7 +128,7 @@ new hyperProxy.start(overrides, settings);
 
 For more explanations look into the example.js and hyperProxy.js code.
 
-After setting up a file, just run it using node.js in the directory of your hyperProxy file, for example:
+After setting up a file, just run it using Node.js in the directory of your hyperProxy file, for example:
 
 ```sh
 node example.js
@@ -253,7 +253,7 @@ jsdoc hyperProxy.js lib/*.js README.md -d documentation -c jsdoc.json
 
 ## Known problems
 
-1. When using CNTLM and node.js 0.10+ requests start to freeze quickly. It worked OK with node.js 0.8+.
+1. When using CNTLM and Node.js 0.10+ requests start to freeze quickly. It worked OK with Node.js 0.8+.
    We're probably doing something wrong with handling the streams.
 2. On Windows, PAC does not work well. It's probably because of self-signed certificate and when browser tries to access original
    files from the target and overridden files from our proxy, it gets two different certificates, which may be a cause of the problem.
